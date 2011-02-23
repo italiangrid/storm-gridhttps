@@ -1,0 +1,30 @@
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" version="2.4"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http:/java.sun.com/dtd/web-app_2_3.dtd">
+	<display-name>Resource Mapping Service</display-name>
+	<servlet>
+		<servlet-name>resourceMapping</servlet-name>
+		<display-name>A servlet for file path to relative URL mapping
+		</display-name>
+		<servlet-class>it.grid.storm.gridhttps.servlet.MapperServlet
+		</servlet-class>
+	</servlet>
+
+	<listener>
+		<listener-class>it.grid.storm.gridhttps.listener.Listener
+		</listener-class>
+	</listener>
+	<servlet-mapping>
+		<servlet-name>resourceMapping</servlet-name>
+		<url-pattern>/resourceMapping</url-pattern>
+	</servlet-mapping>
+	<filter>
+		<filter-name>resourceMapping-filter</filter-name>
+		<filter-class>it.grid.storm.gridhttps.filter.IPFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>resourceMapping-filter</filter-name>
+		<url-pattern> /resourceMapping </url-pattern>
+	</filter-mapping>
+
+</web-app>

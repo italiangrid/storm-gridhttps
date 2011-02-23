@@ -1,0 +1,43 @@
+<assembly xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/assembly-1.0.0.xsd">
+
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<formats>
+		<format>tar.gz</format>
+	</formats>
+
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}/../gridhttps_common/target</directory>
+			<outputDirectory>/usr/share/java</outputDirectory>
+			<includes>
+				<include>*.jar</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../gridhttps_filter/target</directory>
+			<outputDirectory>/usr/share/java</outputDirectory>
+			<includes>
+				<include>*.jar</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../gridhttps_webapp/target</directory>
+			<outputDirectory>/usr/share/java</outputDirectory>
+			<includes>
+				<include>*.war</include>
+			</includes>
+		</fileSet>
+	</fileSets>
+
+	<dependencySets>
+		<dependencySet>
+			<outputDirectory>/usr/share/java</outputDirectory>
+			<excludes>
+				<exclude>it.grid.storm:gridhttps_filter</exclude>
+				<exclude>it.grid.storm:gridhttps_common</exclude>
+				<exclude>it.grid.storm:gridhttps_webapp</exclude>
+			</excludes>
+		</dependencySet>
+	</dependencySets>
+</assembly>
