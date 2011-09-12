@@ -12,31 +12,38 @@
  */
 package it.grid.storm.gridhttps;
 
+import it.grid.storm.gridhttps.log.LoggerManager;
+import it.grid.storm.gridhttps.StatefullObservable;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
-
 
 /**
  * @author Michele Dibenedetto
  *
  */
-public class Configuration
+public class Configuration extends StatefullObservable
 {
-    // Backend configuration
     
-    private static String stormBackendHostname = null;
-    private static int stormBackendRestPort = -1;
-    private static String stormBackendIP = null;
-    private static String contextDeployFolder = null;
+    private ConfigurationParameters parameters = null; 
     
     //gridhttps configuration
+    
     public static final String CONTEXT_FILE_NAME_PREFIX = "storageArea";
     
     public static final String SERVICE_PATH = File.separator + Configuration.CONTEXT_FILE_NAME_PREFIX;
     
     public static final String CONTEXT_DEPLOY_FOLDER_KEY = "contextDeployFolder";
+    
+    public static final String SERVLET_CONTEXT_PATH = "/gridhttps";
+    
+    public static final String LOG_FOLDER_PATH = File.separatorChar + "var" + File.separatorChar + "log" + File.separatorChar + "storm";
+    /**
+     * The path of the lo4j configuration file for gridhttps server
+     */
+    public static final String LOG4J_CONFIGURATION_FILE_PATH = File.separatorChar + "etc" + File.separatorChar + "storm" + File.separatorChar +
+    "gridhttps-server" + File.separatorChar + "log4j-gridhttps-server.properties";
+    
     
     /* BE Rest API URL */
     public static final String SERVER_HOST_CONFIGURATION_KEY = "server.hostname";
@@ -44,71 +51,139 @@ public class Configuration
     
     public static final String MAPPER_SERVLET_ENCODING_SCHEME = "UTF-8";
     
-    public static void init(String hostname, int port, String containerContextDeployFolder) throws UnknownHostException
+    private static final Configuration instance = new Configuration();
+    
+    private Configuration()
+    {}
+    
+    public static Configuration getInstance()
     {
-        setStormBackendHostname(hostname);
-        setStormBackendIP(InetAddress.getByName(hostname).getHostAddress());
-        setStormBackendRestPort(port);
-        setContextDeployFolder(containerContextDeployFolder);
-    }
-
-    /**
-     * @param stormBackendIP the stormBackendIP to set
-     */
-    private static void setStormBackendIP(String stormBackendIP)
-    {
-        Configuration.stormBackendIP = stormBackendIP;
-    }
-
-    /**
-     * @return the stormBackendIP
-     */
-    public static String getStormBackendIP()
-    {
-        return stormBackendIP;
-    }
-
-    /**
-     * @param stormBackendHostname the stormBackendHostname to set
-     */
-    private static void setStormBackendHostname(String stormBackendHostname)
-    {
-        Configuration.stormBackendHostname = stormBackendHostname;
-    }
-
-    /**
-     * @return the stormBackendHostname
-     */
-    public static String getStormBackendHostname()
-    {
-        return stormBackendHostname;
-    }
-
-    /**
-     * @param stormBackendRestPort the stormBackendRestPort to set
-     */
-    private static void setStormBackendRestPort(int port)
-    {
-        Configuration.stormBackendRestPort = port;
-    }
-
-    /**
-     * @return the stormBackendRestPort
-     */
-    public static int getStormBackendRestPort()
-    {
-        return stormBackendRestPort;
+        return instance;
     }
     
-    private static void setContextDeployFolder(String containerContextDeployFolder)
+    /**
+     * Initializes the configuration class and notifies eventually observers
+     * 
+     * @param hostname storm Backend hostname
+     * @param port storm Backend rest port
+     * @param containerContextDeployFolder the folder where the servlet container looks for contxt files
+     * @throws UnknownHostException if the hostname cannot be resolved
+     * @throws IllegalArgumentException if any of the parameters is null, an empty string or lower than 0
+     */
+    public synchronized void init(String hostname, int port, String containerContextDeployFolder) throws UnknownHostException, IllegalArgumentException
     {
-        Configuration.contextDeployFolder = containerContextDeployFolder;
+        if(hostname == null || hostname.equals("") || port < 0 || containerContextDeployFolder == null || containerContextDeployFolder.equals(""))
+        {
+            LoggerManager.getConfigurationLogger().error("Unable to initialize Configuration! Provided some null/empty parameters: hostname =" + hostname + " , port=" + port + " , containerContextDeployFolder ="
+                    + containerContextDeployFolder);
+            throw new IllegalArgumentException("Unable to initialize Configuration! Provided some null/empty parameters");
+        }
+        LoggerManager.getConfigurationLogger().debug("Initializing...");
+        String stormBackendIP = InetAddress.getByName(hostname).getHostAddress();
+        this.parameters = new ConfigurationParameters(hostname, stormBackendIP, port, containerContextDeployFolder);
+        LoggerManager.getConfigurationLogger().debug("Registering this observable as changed");
+        this.setChanged();
+        LoggerManager.getConfigurationLogger().debug("Notifying the observers");
+        this.notifyObservers();
+        LoggerManager.getConfigurationLogger().debug("Initialization completed");
+    }
+    
+    public synchronized boolean isInitialized()
+    {
+        return parameters != null;
+    }
+    
+    /* (non-Javadoc)
+     * @see it.grid.storm.gridhttps.StatefullObservable#getState()
+     */
+    @Override
+    public synchronized ConfigurationParameters getState()
+    {
+        return this.parameters;
+    }
+
+    public class ConfigurationParameters
+    {
+     // Backend configuration
         
-    }
-    
-    public static String getContextDeployFolder()
-    {
-        return contextDeployFolder;
-    }
+        private String stormBackendHostname = null;
+        private Integer stormBackendRestPort = null;
+        private String stormBackendIP = null;
+        private String contextDeployFolder = null;
+        
+        protected ConfigurationParameters(String hostname, String stormBackendIP, int port, String containerContextDeployFolder)
+        {
+            setStormBackendHostname(hostname);
+            setStormBackendIP(stormBackendIP);
+            setStormBackendRestPort(port);
+            setContextDeployFolder(containerContextDeployFolder);
+        }
+        
+        /**
+         * @param stormBackendIP the stormBackendIP to set
+         */
+        private void setStormBackendIP(String stormBackendIP)
+        {
+            this.stormBackendIP = new String(stormBackendIP);
+        }
 
+        /**
+         * @return the stormBackendIP
+         */
+        public String getStormBackendIP()
+        {
+            return stormBackendIP;
+        }
+
+        /**
+         * @param hostname the stormBackendHostname to set
+         */
+        private void setStormBackendHostname(String hostname)
+        {
+            LoggerManager.getConfigurationLogger().debug("Setting stormBackendHostname to " + hostname);
+            this.stormBackendHostname = new String(hostname);
+        }
+
+        /**
+         * @return the stormBackendHostname
+         */
+        public String getStormBackendHostname()
+        {
+            return stormBackendHostname;
+        }
+
+        /**
+         * @param stormBackendRestPort the stormBackendRestPort to set
+         */
+        private void setStormBackendRestPort(Integer port)
+        {
+            LoggerManager.getConfigurationLogger().debug("Setting stormBackendRestPort to " + port);
+            this.stormBackendRestPort = new Integer(port);
+        }
+
+        /**
+         * @return the stormBackendRestPort
+         */
+        public Integer getStormBackendRestPort()
+        {
+            return stormBackendRestPort;
+        }
+        
+        /**
+         * @param contextDeployFolder the containerContextDeployFolder to set
+         */
+        private void setContextDeployFolder(String contextDeployFolder)
+        {
+            LoggerManager.getConfigurationLogger().debug("Setting contextDeployFolder to " + contextDeployFolder);
+            this.contextDeployFolder = contextDeployFolder;
+        }
+        
+        /**
+         * @return the contextDeployFolder
+         */
+        public String getContextDeployFolder()
+        {
+            return contextDeployFolder;
+        }
+    }
 }

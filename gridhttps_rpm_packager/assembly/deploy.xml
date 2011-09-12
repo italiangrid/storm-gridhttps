@@ -9,34 +9,53 @@
 	<fileSets>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_common/target</directory>
-			<outputDirectory>/usr/share/java</outputDirectory>
+			<outputDirectory>${jar_installation_prefix}/${parent.artifactId}</outputDirectory>
 			<includes>
 				<include>*.jar</include>
 			</includes>
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_filter/target</directory>
-			<outputDirectory>/usr/share/java</outputDirectory>
+			<outputDirectory>${jar_installation_prefix}/${parent.artifactId}</outputDirectory>
 			<includes>
 				<include>*.jar</include>
 			</includes>
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_webapp/target</directory>
-			<outputDirectory>/usr/share/java</outputDirectory>
+			<outputDirectory>${jar_installation_prefix}/${parent.artifactId}</outputDirectory>
 			<includes>
 				<include>*.war</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../etc</directory>
+			<outputDirectory>${conf_installation_prefix}/${module_name}</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../log</directory>
+			<outputDirectory>${log_installation_directory}</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../doc</directory>
+			<outputDirectory>${doc_installation_prefix}/${parent.artifactId}-${version}</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../</directory>
+			<outputDirectory>${doc_installation_prefix}/${parent.artifactId}-${version}</outputDirectory>
+			<includes>
+				<include>LICENSE.txt</include>
 			</includes>
 		</fileSet>
 	</fileSets>
 
 	<dependencySets>
 		<dependencySet>
-			<outputDirectory>/usr/share/java</outputDirectory>
+			<outputDirectory>${jar_installation_prefix}/${parent.artifactId}</outputDirectory>
 			<excludes>
-				<exclude>it.grid.storm:gridhttps_filter</exclude>
-				<exclude>it.grid.storm:gridhttps_common</exclude>
-				<exclude>it.grid.storm:gridhttps_webapp</exclude>
+				<exclude>${groupId}:gridhttps_common</exclude>
+				<exclude>${groupId}:gridhttps_filter</exclude>
+				<exclude>${groupId}:gridhttps_webapp</exclude>
 			</excludes>
 		</dependencySet>
 	</dependencySets>

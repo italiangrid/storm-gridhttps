@@ -1,9 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>it.grid.storm</groupId>
+	<groupId>emi.storm</groupId>
 	<artifactId>storm-gridhttps-server</artifactId>
-	<version>1.0.0</version>
+	<!--		<version>1.0.1</version>-->
+	<version>${emi-version}</version>
 	<packaging>pom</packaging>
 	<developers>
 		<developer>
@@ -14,6 +15,13 @@
 			</roles>
 		</developer>
 	</developers>
+	<properties>
+		<jar_installation_prefix>/usr/share/java</jar_installation_prefix>
+		<doc_installation_prefix>/usr/share/doc</doc_installation_prefix>
+		<conf_installation_prefix>/etc/storm</conf_installation_prefix>
+		<module_name>gridhttps-server</module_name>
+		<log_installation_directory>/var/log/storm</log_installation_directory>
+	</properties>
 	<modules>
 		<module>gridhttps_common</module>
 		<module>gridhttps_filter</module>
@@ -21,51 +29,97 @@
 		<module>gridhttps_rpm_packager</module>
 		<module>gridhttps_source_rpm_packager</module>
 	</modules>
-	<dependencies>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.4</version>
-			<type>jar</type>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.13</version>
-			<type>jar</type>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
-			<version>4.1</version>
-			<type>jar</type>
-		</dependency>
-		<dependency>
-			<groupId>emi.java-security</groupId>
-			<artifactId>trustmanager</artifactId>
-			<version>3.0.0-1</version>
-			<type>jar</type>
-		</dependency>
-		<dependency>
-			<groupId>emi.java-security</groupId>
-			<artifactId>trustmanager-tomcat</artifactId>
-			<version>2.5.7-1</version>
-			<type>jar</type>
-		</dependency>
-		<dependency>
-			<groupId>emi.voms</groupId>
-			<artifactId>voms-api-java</artifactId>
-			<version>2.0.0-1</version>
-			<type>jar</type>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk16</artifactId>
-			<version>1.45</version>
-			<type>jar</type>
-			<scope>compile</scope>
-		</dependency>
-	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>${groupId}</groupId>
+				<artifactId>gridhttps_common</artifactId>
+				<version>1.0.0</version>
+				<type>jar</type>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>${groupId}</groupId>
+				<artifactId>gridhttps_filter</artifactId>
+				<version>1.0.0</version>
+				<type>jar</type>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>${groupId}</groupId>
+				<artifactId>gridhttps_webapp</artifactId>
+				<version>1.0.0</version>
+				<type>war</type>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>javax.servlet</groupId>
+				<artifactId>servlet-api</artifactId>
+				<version>2.4</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.httpcomponents</groupId>
+				<artifactId>httpclient</artifactId>
+				<version>4.1</version>
+				<type>jar</type>
+				<exclusions>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>emi.java-security</groupId>
+				<artifactId>emi-trustmanager</artifactId>
+				<version>3</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>emi.java-security</groupId>
+				<artifactId>emi-trustmanager-tomcat</artifactId>
+				<version>3</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>emi.voms</groupId>
+				<artifactId>vomsjapi</artifactId>
+				<version>2</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>emi.externals</groupId>
+				<artifactId> bouncycastle</artifactId>
+				<version>1.45-6.el5</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>commons-logging</groupId>
+				<artifactId>commons-logging</artifactId>
+				<version>1.0.4</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+				<version>1.2.13</version>
+				<type>jar</type>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>commons-modeler</groupId>
+				<artifactId>commons-modeler</artifactId>
+				<version>2.0.1</version>
+				<type>jar</type>
+				<scope>compile</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

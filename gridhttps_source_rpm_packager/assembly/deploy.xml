@@ -12,57 +12,83 @@
 			<outputDirectory>/</outputDirectory>
 			<includes>
 				<include>pom.xml</include>
+				<include>LICENSE.txt</include>
+				<include>log</include>
 			</includes>
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_common</directory>
 			<outputDirectory>/gridhttps_common</outputDirectory>
-			<excludes>
-				<exclude>target/</exclude>
-				<exclude>.project</exclude>
-				<exclude>.classpath</exclude>
-				<exclude>.settings/</exclude>
-			</excludes>
+			<includes>
+				<include>pom.xml</include>
+				<include>src/main/java/**</include>
+			</includes>
+<!--			<excludes>-->
+<!--				<exclude>target/</exclude>-->
+<!--				<exclude>.project</exclude>-->
+<!--				<exclude>.classpath</exclude>-->
+<!--				<exclude>.settings/</exclude>-->
+<!--			</excludes>-->
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_filter</directory>
 			<outputDirectory>/gridhttps_filter</outputDirectory>
-			<excludes>
-				<exclude>target/</exclude>
-				<exclude>.project</exclude>
-				<exclude>.classpath</exclude>
-				<exclude>.settings/</exclude>
-			</excludes>
+<!--			<excludes>-->
+<!--				<exclude>target/</exclude>-->
+<!--				<exclude>.project</exclude>-->
+<!--				<exclude>.classpath</exclude>-->
+<!--				<exclude>.settings/</exclude>-->
+<!--			</excludes>-->
+			<includes>
+				<include>pom.xml</include>
+				<include>src/main/java/**</include>
+			</includes>
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_webapp</directory>
 			<outputDirectory>/gridhttps_webapp</outputDirectory>
-			<excludes>
-				<exclude>target/</exclude>
-				<exclude>.project</exclude>
-				<exclude>.classpath</exclude>
-				<exclude>.settings/</exclude>
-			</excludes>
+<!--			<excludes>-->
+<!--				<exclude>target/</exclude>-->
+<!--				<exclude>.project</exclude>-->
+<!--				<exclude>.classpath</exclude>-->
+<!--				<exclude>.settings/</exclude>-->
+<!--			</excludes>-->
+			<includes>
+				<include>pom.xml</include>
+				<include>src/main/java/**</include>
+				<include>src/main/webapp/**</include>
+				<include>src/main/resources/**</include>
+
+			</includes>
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_rpm_packager</directory>
 			<outputDirectory>/gridhttps_rpm_packager</outputDirectory>
-			<excludes>
-				<exclude>target/</exclude>
-				<exclude>.project</exclude>
-				<exclude>.classpath</exclude>
-				<exclude>.settings/</exclude>
-			</excludes>
+<!--			<excludes>-->
+<!--				<exclude>target/</exclude>-->
+<!--				<exclude>.project</exclude>-->
+<!--				<exclude>.classpath</exclude>-->
+<!--				<exclude>.settings/</exclude>-->
+<!--			</excludes>-->
+			<includes>
+				<include>pom.xml</include>
+				<include>src/main/bin/**</include>
+				<include>assembly/**</include>
+			</includes>
 		</fileSet>
 		<fileSet>
 			<directory>${basedir}/../gridhttps_source_rpm_packager</directory>
 			<outputDirectory>/gridhttps_source_rpm_packager</outputDirectory>
-			<excludes>
-				<exclude>target/</exclude>
-				<exclude>.project</exclude>
-				<exclude>.classpath</exclude>
-				<exclude>.settings/</exclude>
-			</excludes>
+<!--			<excludes>-->
+<!--				<exclude>target/</exclude>-->
+<!--				<exclude>.project</exclude>-->
+<!--				<exclude>.classpath</exclude>-->
+<!--				<exclude>.settings/</exclude>-->
+<!--			</excludes>-->
+			<includes>
+				<include>pom.xml</include>
+				<include>assembly/**</include>
+			</includes>
 		</fileSet>		
 	</fileSets>
 </assembly>

@@ -3,10 +3,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>storm-gridhttps-server</artifactId>
-		<groupId>it.grid.storm</groupId>
-		<version>1.0.0</version>
+		<groupId>emi.storm</groupId>
+<!--		<version>1.0.1</version>-->
+		<version>${emi-version}</version>
 	</parent>
-	<groupId>it.grid.storm</groupId>
 	<artifactId>gridhttps_rpm_packager</artifactId>
 	<version>${project.parent.version}</version>
 	<packaging>pom</packaging>
@@ -27,7 +27,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<finalName>${project.parent.artifactId}-${project.parent.version}</finalName>
+					<finalName>${project.parent.artifactId}-${project.parent.version}-${age}.noarch</finalName>
 					<descriptors>
 						<descriptor>assembly/deploy.xml</descriptor>
 					</descriptors>
@@ -46,68 +46,91 @@
 						</goals>
 					</execution>
 				</executions>
-				<configuration>
+				<configuration> 
 					<name>${project.parent.artifactId}</name>
 					<version>${project.parent.version}</version>
+					<release>${age}</release>
+<!--					<needarch>x86_64</needarch>-->
+					<autoProvides>true</autoProvides>
+					<autoRequires>true</autoRequires>
+					<summary>The StoRM GridHTTPS component</summary>
 					<copyright>Apache License, Version 2.0. See included file LICENSE.txt</copyright>
-					<group>Application/Generic</group>
+					<url>http://storm.forge.cnaf.infn.it</url>
+					<vendor>EMI</vendor>
+					<group>Application/Internet</group>
+					<packager>Michele Dibenedetto storm-support@lists.infn.it</packager>
+					<changelogFile>${basedir}/../doc/CHANGELOG</changelogFile>
 					<mappings>
 						<mapping>
-							<directory>/usr/share/java</directory>
+							<directory>${jar_installation_prefix}/${project.parent.artifactId}</directory>
 							<dependency>
-								<excludes>
-									<exclude>it.grid.storm:gridhttps_filter</exclude>
-									<exclude>it.grid.storm:gridhttps_common</exclude>
-									<exclude>it.grid.storm:gridhttps_webapp</exclude>
-								</excludes>
 							</dependency>
+						</mapping>
+						<mapping>
+							<configuration>true</configuration>
+							<directoryIncluded>true</directoryIncluded>	
+							<directory>${conf_installation_prefix}/${module_name}</directory>
 							<sources>
 								<source>
-									<location>${basedir}/../gridhttps_common/target</location>
-									<includes>
-										<include>*.jar</include>
-									</includes>
+									<location>${basedir}/../etc</location>
+								</source>
+							</sources>
+						</mapping>
+						<mapping>
+							<documentation>true</documentation>	
+							<directoryIncluded>true</directoryIncluded>	
+							<directory>${doc_installation_prefix}/${project.parent.artifactId}-${project.parent.version}</directory>
+							<sources>
+								<source>
+									<location>${basedir}/../LICENSE.txt</location>
 								</source>
 								<source>
-									<location>${basedir}/../gridhttps_filter/target</location>
-									<includes>
-										<include>*.jar</include>
-									</includes>
+									<location>${basedir}/../doc/CHANGELOG</location>
 								</source>
+							</sources>
+						</mapping>
+						<mapping>
+							<directoryIncluded>true</directoryIncluded>	
+							<directory>${log_installation_directory}</directory>
+							<sources>
 								<source>
-									<location>${basedir}/../gridhttps_webapp/target</location>
-									<includes>
-										<include>*.war</include>
-									</includes>
+									<location>${basedir}/../log</location>
 								</source>
 							</sources>
 						</mapping>
 					</mappings>
+					<requires>
+						<require>tomcat5</require>
+						<require>vomsjapi</require>
+						<require>emi-trustmanager-tomcat</require>
+						<require>emi-trustmanager</require>
+						<require>bouncycastle</require>
+						<require>jakarta-commons-lang</require>
+					</requires>
+					<postinstallScriptlet>
+						<scriptFile>src/main/bin/postinstall.sh</scriptFile>
+    					<fileEncoding>utf-8</fileEncoding>					
+					</postinstallScriptlet>
+					<preremoveScriptlet>
+						<scriptFile>src/main/bin/preremove.sh</scriptFile>
+					</preremoveScriptlet>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>it.grid.storm</groupId>
+			<groupId>${groupId}</groupId>
 			<artifactId>gridhttps_common</artifactId>
-			<version>1.0.0</version>
-			<type>jar</type>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>it.grid.storm</groupId>
+			<groupId>${groupId}</groupId>
 			<artifactId>gridhttps_filter</artifactId>
-			<version>1.0.0</version>
-			<type>jar</type>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>it.grid.storm</groupId>
+			<groupId>${groupId}</groupId>
 			<artifactId>gridhttps_webapp</artifactId>
-			<version>1.0.0</version>
 			<type>war</type>
-			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 </project>

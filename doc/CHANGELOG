@@ -1,0 +1,5 @@
+* Fri Feb 23 2011 <Michele Dibenedetto> <michele.dibenedetto@cnaf.infn.it>
+- version %{version}-%{release} 
+-the storm-gridhhtps-server is responsible provide http(s) access to files 
+-the service verifies https calls by unspecting the received certificate and eventualy its VOMS extensions
+-it interacts with storm-gridhttps-server using the Authorization Rest interfacethat it provides. Current version is compliant with storm-backend-server Authorization rest interface version 1.0.0

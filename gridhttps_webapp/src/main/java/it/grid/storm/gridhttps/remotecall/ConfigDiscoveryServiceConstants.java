@@ -21,27 +21,16 @@ public class ConfigDiscoveryServiceConstants
 
 
     public static final String ENCODING_SCHEME = "UTF-8";
-    
     public static final String RESOURCE = "configuration";
-    
     public static final String VERSION = "1.0";
-    
     public static final String LIST_ALL_KEY = "StorageAreaList";
-    
     public static final char VFS_LIST_SEPARATOR = ':';
-    
     public static final String VFS_NAME_KEY = "name";
-
     public static final char VFS_FIELD_MATCHER = '=';
-
     public static final char VFS_FIELD_SEPARATOR = '&';
-
     public static final String VFS_ROOT_KEY = "root";
-
     public static final String VFS_STFN_ROOT_KEY = "stfnRoot";
-
     public static final char VFS_STFN_ROOT_SEPARATOR = ';';
-    
     /*
      * Usage samples in an HTTP GET call
      * /RESOURCE/VERSION/LIST_ALL_KEY

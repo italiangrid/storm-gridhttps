@@ -13,7 +13,9 @@
 package it.grid.storm.gridhttps.storagearea;
 
 
+import it.grid.storm.gridhttps.log.LoggerManager;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  * @author Michele Dibenedetto
@@ -23,34 +25,70 @@ public class StorageAreaManager
 
 
     /**
+     * 
+     */
+    private static Logger log = LoggerManager.getLogger(StorageAreaManager.class);
+
+    /**
      * The list of all storage areas configured at storm backend
-     * NOTE: if storm backend is restarted gridhttps must be restarted too!
+     * NOTE: if storm backend is restarted gridhttps server must be restarted too!
      */
     private static List<StorageArea> storageAreas = null;
 
 
+    /**
+     * Avoid instantiation
+     */
     private StorageAreaManager()
     {
     }
 
 
+    /**
+     * @return true if a list of storage areas is available
+     */
     public static boolean initialized()
     {
         return StorageAreaManager.storageAreas != null;
     }
 
 
-    public static void init(List<StorageArea> SAList)
+    /**
+     * Initializes the class with a list of storage areas
+     * 
+     * @param SAList
+     */
+    public static synchronized void init(List<StorageArea> SAList)
     {
         if (storageAreas == null)
         {
+            log.info("Initializing the Storage Area manager with following StorageAreas: " + SAList.toString());
             storageAreas = SAList;
         }
     }
 
 
-    public static StorageArea getSA(String localFilePath)
+    /**
+     * Searches for a storage area in the available list that has an FSRoot that is the longest
+     * match with the provided file path
+     * 
+     * @param localFilePath must not be null
+     * @return the best match StorageArea, null if none matches
+     * @throws IllegalArgumentException if localFilePath is null
+     */
+    public static StorageArea getMatchingSA(String localFilePath) throws IllegalArgumentException
     {
+        if (localFilePath == null)
+        {
+            log.error("Unable to match StorageArea, the provided localFilePath is null");
+            throw new IllegalArgumentException("Provided localFilePath il null!");
+        }
+        if (!initialized())
+        {
+            log.error("Unable to match StorageArea, class not initialized. " + "Call init() first");
+            throw new IllegalStateException("Unable to match any StorageArea, class not initialized.");
+        }
+        log.debug("Looking for a StorageArea that matches " + localFilePath);
         StorageArea mappedSA = null;
         int matchedSAFSRootLength = 0;
         for (StorageArea storageArea : storageAreas)
@@ -58,12 +96,20 @@ public class StorageAreaManager
             if (localFilePath.startsWith(storageArea.getFSRoot())
                     && (mappedSA == null || storageArea.getFSRoot().length() > mappedSA.getFSRoot().length()))
             {
-                if(storageArea.getStfnRoot().length() > matchedSAFSRootLength)
+                if (storageArea.getStfnRoot().length() > matchedSAFSRootLength)
                 {
                     mappedSA = storageArea;
                     matchedSAFSRootLength = storageArea.getStfnRoot().length();
                 }
             }
+        }
+        if(mappedSA == null)
+        {
+            log.debug("No match found");
+        }
+        else
+        {
+            log.debug("Matched StorageArea " + mappedSA.toString());
         }
         return mappedSA;
     }

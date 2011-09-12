@@ -24,7 +24,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>resourceMapping-filter</filter-name>
-		<url-pattern> /resourceMapping </url-pattern>
+		<url-pattern>/resourceMapping/*</url-pattern>
 	</filter-mapping>
 
 </web-app>

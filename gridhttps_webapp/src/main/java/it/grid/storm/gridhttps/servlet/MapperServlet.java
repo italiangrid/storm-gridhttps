@@ -13,6 +13,7 @@
 package it.grid.storm.gridhttps.servlet;
 
 import it.grid.storm.gridhttps.Configuration;
+import it.grid.storm.gridhttps.log.LoggerManager;
 import it.grid.storm.gridhttps.storagearea.StorageArea;
 import it.grid.storm.gridhttps.storagearea.StorageAreaManager;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.log4j.Logger;
 
 /**
  * @author Michele Dibenedetto
@@ -30,16 +32,21 @@ import javax.servlet.http.HttpServletResponse;
 public class MapperServlet extends HttpServlet
 {
 
-
+    private static Logger log = LoggerManager.getLogger(MapperServlet.class);
     /**
      * 
      */
     private static final long serialVersionUID = 293463225950571516L;
+    private static final String PATH_PARAMETER_KEY = "path";
 
 
+    /* (non-Javadoc)
+     * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+     */
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException
     {
-        String path = req.getParameter("path");
+        log.info("Serving a get request");
+        String path = req.getParameter(PATH_PARAMETER_KEY);
         String pathDecoded;
         try
         {
@@ -47,23 +54,50 @@ public class MapperServlet extends HttpServlet
         }
         catch (UnsupportedEncodingException e)
         {
-            System.err.println("Unable to decode parameters. UnsupportedEncodingException : " + e.getMessage());
-            throw new ServletException("Unable to decode parameters. UnsupportedEncodingException : " + e.getMessage() + " Use " + Configuration.MAPPER_SERVLET_ENCODING_SCHEME + " encoding scheme");
+            log.error("Unable to decode " + PATH_PARAMETER_KEY + " parameter. UnsupportedEncodingException : " + e.getMessage());
+            throw new ServletException("Unable to decode " + PATH_PARAMETER_KEY + " parameter", e);
         }
-        System.out.println("Decoded filePath = " + pathDecoded);
-        StorageArea SA = StorageAreaManager.getSA(pathDecoded);
+        log.debug("Decoded filePath = " + pathDecoded + " . Retrieving matching StorageArea");
+        StorageArea SA = StorageAreaManager.getMatchingSA(pathDecoded);
+        if(SA == null)
+        {
+            log.error("No matching StorageArea found for path \'" + pathDecoded + "\' Unable to build http(s) relative path");
+            throw new ServletException("No matching StorageArea found for the provided path");
+        }
         res.setContentType("text/html");
-        PrintWriter out = res.getWriter();
-        
-        out.print(Configuration.SERVICE_PATH + getStfnPath(pathDecoded, SA));
+        PrintWriter out;
+        try
+        {
+            out = res.getWriter();
+        }catch (IOException e)
+        {
+            log.error("Unable to obtain the PrintWriter for the response. IOException: " + e.getMessage());
+            throw e;
+        }
+        String relativeUrl = Configuration.SERVICE_PATH + getStfnPath(pathDecoded, SA);
+        log.debug("Writing in the response the relative URL : " + relativeUrl);
+        out.print(relativeUrl);
     }
 
+    /**
+     * Removes from the given path the FSRoot and appends on its head the StfnRoot
+     *  
+     * @param path
+     * @param SA
+     * @return 
+     */
     private String getStfnPath(String path, StorageArea SA)
     {
-        return SA.getStfnRoot() + path.substring(SA.getFSRoot().length(), path.length());
+        log.debug("Building StfnPath for path " + path + " in StorageArea " + SA.getName());
+        String Stfnpath = SA.getStfnRoot() + path.substring(SA.getFSRoot().length(), path.length());
+        log.debug("Stfnpath is \'" + Stfnpath + "\'");
+        return Stfnpath;
     }
 
 
+    /* (non-Javadoc)
+     * @see javax.servlet.GenericServlet#getServletInfo()
+     */
     public String getServletInfo()
     {
         return "A servlet providing a mapping between a fisical file path and it\'s relative URL";

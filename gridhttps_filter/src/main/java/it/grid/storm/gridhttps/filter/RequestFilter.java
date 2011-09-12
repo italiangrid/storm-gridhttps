@@ -14,12 +14,12 @@ package it.grid.storm.gridhttps.filter;
 
 
 import it.grid.storm.gridhttps.Configuration;
+import it.grid.storm.gridhttps.Configuration.ConfigurationParameters;
+import it.grid.storm.gridhttps.log.LoggerManager;
 import it.grid.storm.gridhttps.remotecall.UserAuthzServiceConstants;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -43,6 +43,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.log4j.Logger;
 import org.glite.security.SecurityContext;
 import org.glite.security.util.DN;
 import org.glite.security.util.DNHandler;
@@ -55,25 +56,11 @@ import org.glite.voms.VOMSValidator;
 public class RequestFilter implements Filter
 {
 
+    private static Logger log = LoggerManager.getLogger(RequestFilter.class);
+    
     private FilterConfig filterConfig = null;
     private boolean started = false;
-    /* Logging */
-    /**
-     * 
-     */
-    private static PrintWriter writer = null;
-    /**
-     * 
-     */
-    private String directory = "logs";
-    /**
-     * The prefix that is added to log file filenames.
-     */
-    private String prefix = "gridhttps.";
-    /**
-     * The suffix that is added to log file filenames.
-     */
-    private String suffix = "log";
+    
     /**
      * The static validator object used to check VOMS attribute certificate
      * validity
@@ -86,6 +73,7 @@ public class RequestFilter implements Filter
     private static final String[] ALLOWED_METHODS = new String[] { READ_METHOD, WRITE_METHOD };
     private static String ENCODED_READ_OPERATION;
     private static String ENCODED_WRITE_OPERATION;
+    
     /* BE Rest API URL */
     private static String SERVER_HOST_CONFIGURATION_KEY = "server.hostname";
     private static String SERVER_PORT_CONFIGURATION_KEY = "server.port";
@@ -96,17 +84,21 @@ public class RequestFilter implements Filter
      */
     public void init(FilterConfig filterConfig) throws ServletException
     {
-        System.out.println("The Filter Is Ready");
+        log.info("Initializing service filter");
         this.filterConfig = filterConfig;
         if (started)
         {
+            log.error("Requested service filter initialization whereas the filter is already initialized");
             throw new ServletException("This filter has been already initialized!!");
         }
         started = true;
-        open();
         initOperationNames();
-        loadInitParameters();
-        log("INFO: Filter initialized correctly");
+        if(!Configuration.getInstance().isInitialized())
+        {
+            log.debug("Configuration not initialized. Providing the needed parameters...");
+            loadInitParameters();
+        }
+        log.info("Service filter initialized correctly");
     }
 
     /**
@@ -117,13 +109,13 @@ public class RequestFilter implements Filter
         String serverHost = filterConfig.getInitParameter(SERVER_HOST_CONFIGURATION_KEY);
         if (serverHost == null)
         {
-            log("ERROR: No server host init parameter provided! Parameter name must be \'" + SERVER_HOST_CONFIGURATION_KEY + "\'");
+            log.error("No server host init parameter provided! Parameter name must be \'" + SERVER_HOST_CONFIGURATION_KEY + "\'");
             throw new ServletException("Error retrieving initialization parameters");
         }
         String serverPortString = filterConfig.getInitParameter(SERVER_PORT_CONFIGURATION_KEY);
         if (serverPortString == null)
         {
-            log("ERROR: No server port init parameter provided! Parameter name must be \'" + SERVER_PORT_CONFIGURATION_KEY + "\'");
+            log.error("No server port init parameter provided! Parameter name must be \'" + SERVER_PORT_CONFIGURATION_KEY + "\'");
             throw new ServletException("Error retrieving initialization parameters");
         }
         int serverPort;
@@ -133,22 +125,23 @@ public class RequestFilter implements Filter
         }
         catch (NumberFormatException e)
         {
-            log("ERROR: Unable to parse the server port init parameter \'" + serverPortString + "\'");
+            log.error("Unable to parse the server port init parameter \'" + serverPortString + "\'");
             throw new ServletException("Error parsing initialization parameters");
         }
         String containerContextDeployFolder = filterConfig.getInitParameter(Configuration.CONTEXT_DEPLOY_FOLDER_KEY);
         if (containerContextDeployFolder == null)
         {
-            log("ERROR: No context deploy folder init parameter provided! Parameter name must be \'" + Configuration.CONTEXT_DEPLOY_FOLDER_KEY + "\'");
+            log.error("No context deploy folder init parameter provided! Parameter name must be \'" + Configuration.CONTEXT_DEPLOY_FOLDER_KEY + "\'");
             throw new ServletException("Error retrieving initialization parameters");
         }
         try
         {
-            Configuration.init(serverHost, serverPort, containerContextDeployFolder);
+            log.debug("Initializing the configuration with serverHost= " + serverHost + " serverPort= " +serverPort + " containerContextDeployFolder= " + containerContextDeployFolder);
+            Configuration.getInstance().init(serverHost, serverPort, containerContextDeployFolder);
         }
         catch (UnknownHostException e)
         {
-            log("ERROR: Unable initialize gridhttps configuration using host \'" + serverHost + "\' and port \'" + serverPort + "\'");
+            log.error("Unable initialize gridhttps configuration using host \'" + serverHost + "\' and port \'" + serverPort + "\'");
             throw new ServletException("Error configuring the service using provided initialization parameters");
         }
     }
@@ -167,38 +160,9 @@ public class RequestFilter implements Filter
             }
             catch (UnsupportedEncodingException e)
             {
-                log("ERROR: unable to encode operations! UnsupportedEncodingException " + e.getMessage());
+                log.error("ERROR: unable to encode operations! UnsupportedEncodingException " + e.getMessage());
                 throw new ServletException("Internal error! Unable to encode authorization server operation!");
             }
-    }
-
-
-    /**
-     * Open the new log file for the date specified by <code>dateStamp</code>.
-     */
-    private synchronized void open()
-    {
-        if (writer == null)
-        {
-            // Create the directory if necessary
-            File dir = new File(directory);
-            if (!dir.isAbsolute())
-            {
-                dir = new File(System.getProperty("catalina.base"), directory);
-                dir.mkdirs();
-            }
-            // Open the current log file
-            try
-            {
-                String pathname = dir.getAbsolutePath() + File.separator + prefix + suffix;
-                writer = new PrintWriter(new FileWriter(pathname, true), true);
-            }
-            catch (IOException e)
-            {
-                writer = null;
-                System.err.println("Unable to intialize log writer! IOException: " + e.getMessage());
-            }
-        }
     }
 
 
@@ -214,41 +178,7 @@ public class RequestFilter implements Filter
             return;
         }
         started = false;
-        log("INFO: Destroing the filter completed");
-        close();
-    }
-
-
-    /**
-     * Close the currently open log file (if any)
-     */
-    private synchronized void close()
-    {
-        if (writer != null)
-        {
-            writer.flush();
-            writer.close();
-            writer = null;
-        }
-    }
-
-
-    /**
-     * @param message
-     */
-    private synchronized void log(String message)
-    {
-        synchronized (this)
-        {
-            if (writer != null)
-            {
-                writer.println(message);
-            }
-            else
-            {
-                System.err.println("Unable to log, the log file write is null! The filter " + (started ? "is" : "is not") + " initialized");
-            }
-        }
+        log.info("Service filter destroied");
     }
 
 
@@ -258,9 +188,10 @@ public class RequestFilter implements Filter
      */
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
     {  
-        log("DEBUG: Filtering request from host " + request.getRemoteHost());
+        log.info("Filtering request from host " + request.getRemoteHost());
         if (!started)
         {
+            log.error("Unable to filter any request, Service filter not started");
             throw new ServletException("Filter not started!");
         }
         HttpServletResponse HTTPResponse = null;
@@ -273,22 +204,22 @@ public class RequestFilter implements Filter
         }
         else
         {
-            log("ERROR: received non HTTP request. Class is : " + request.getClass());
+            log.error("Received non HTTP request. Class is : " + request.getClass());
             throw new ServletException("Protocol not supported. Use HTTP(S)");
         }
         
         String schema = request.getScheme(); 
-        log("DEBUG: Requested method is : " + schema);
+        log.debug("Requested method is : " + schema);
         if (!checkSchema(schema))
         {
-            log("INFO: Received a request with au unknown schema. Schema is : " + schema);
+            log.info("Received a request with au unknown schema. Schema is : " + schema);
             throw new ServletException("Schema not supported. Use HTTP(S)");
         }
         String method = HTTPRequest.getMethod();
-        log("DEBUG: Requested method is : " + method);
+        log.debug("Requested method is : " + method);
         if (!methodAllowed(method))
         {
-            log("INFO: Received a request for a not allowed method : " + method);
+            log.info("Received a request for a not allowed method : " + method);
             HTTPResponse.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Method " + method + " not allowed! Allowed methods: "
                     + Arrays.toString(ALLOWED_METHODS));
             return;
@@ -296,22 +227,22 @@ public class RequestFilter implements Filter
         String contextPath = HTTPRequest.getContextPath();
         if(checkServletContext(contextPath))
         {
-            log("DEBUG: Received a request for the servlet");
+            log.debug("Received a request for the servlet, let it pass");
             chain.doFilter(request, response);
             return;
         }
-        log("DEBUG: Served context path is : " + contextPath);
+        log.debug("Served context path is : " + contextPath);
         if (!validateContextPath(contextPath))
         {
-            log("INFO: serving a request on an servlet path not related to our service \'" + Configuration.SERVICE_PATH + "\' : " + contextPath);
+            log.info("Serving a request on an servlet path not related to our service \'" + Configuration.SERVICE_PATH + "\' : " + contextPath);
             HTTPResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Requests must start with service path \'" + Configuration.SERVICE_PATH + "\'");
             return;
         }
         String requestedURI = HTTPRequest.getRequestURI();
-        log("DEBUG: Requested resource is : " + requestedURI);
+        log.debug("Requested resource is : " + requestedURI);
         if (!validateUri(requestedURI))
         {
-            log("INFO: reveived a request on an URI not related to our service \'" + Configuration.SERVICE_PATH + "\' : " + requestedURI);
+            log.info("reveived a request on an URI not related to our service \'" + Configuration.SERVICE_PATH + "\' : " + requestedURI);
             HTTPResponse.sendError(HttpServletResponse.SC_BAD_REQUEST, "Requests must start with service path \'" + Configuration.SERVICE_PATH + "\'");
             return;
         }
@@ -322,27 +253,39 @@ public class RequestFilter implements Filter
         }
         catch (IllegalArgumentException e)
         {
-            log("ERROR: Error parsing request URI. IllegalArgumentException : " + e.getMessage());
+            log.error("Error parsing request URI. IllegalArgumentException : " + e.getMessage());
             HTTPResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error parsing request URI");
             return;
         }
-        log("DEBUG: Resource path is : " + resourcePath);
+        log.debug("Resource path is : " + resourcePath);
         if (request.isSecure())
         {
-            log("DEBUG: Request has been sent over a secure connection");
+            log.debug("Request has been sent over a secure connection");
             try
             {
                 setContextFromRequest(request);
             }
             catch (ServletException e)
             {
-                log("ERROR: Unable to set security context for the request. ServletException : " + e.getMessage());
+                log.error("Unable to set security context for the request. ServletException : " + e.getMessage());
                 HTTPResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to set security context for the request: "
                         + e.getMessage());
                 return;
             }
-            String subjectDNX500 = getDNX500FromSecurityContext();
-            log("DEBUG: User DN is : " + subjectDNX500);
+            String subjectDNX500;
+            try
+            {
+                subjectDNX500 = getDNX500FromSecurityContext();
+            }
+            catch (ServletException e)
+            {
+                log.error("Unable to obtain subject x500 Distinguish Name from security context. ServletException : " + e.getMessage());
+                HTTPResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to obtain subject x500 Distinguish Name from security context: "
+                        + e.getMessage());
+                return;
+            }
+            
+            log.debug("User DN is : " + subjectDNX500);
             String[] fquans = null;
             try
             {
@@ -350,7 +293,7 @@ public class RequestFilter implements Filter
             }
             catch (ServletException e)
             {
-                log("ERROR: Unable to get FQANS from security context. ServletException : " + e.getMessage());
+                log.error("Unable to get FQANS from security context. ServletException : " + e.getMessage());
                 HTTPResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Unable to get FQANS from security context: "
                         + e.getMessage());
                 return;
@@ -358,11 +301,11 @@ public class RequestFilter implements Filter
             if (fquans == null || fquans.length == 0)
             {
                 fquans = new String[0];
-                log("INFO: No fquans found in request context");
+                log.debug("No fquans found in request context");
             }
             else
             {
-                log("DEBUG: retrieved FQUANS : " + Arrays.toString(fquans));
+                log.debug("Retrieved FQUANS : " + Arrays.toString(fquans));
             }
             boolean isAuthorized = false;
             try
@@ -371,42 +314,49 @@ public class RequestFilter implements Filter
             }
             catch (IllegalArgumentException e)
             {
-                log("ERROR: Unable to verify user authorization. IllegalArgumentException" + e.getMessage());
+                log.error("Unable to verify user authorization. IllegalArgumentException" + e.getMessage());
                 HTTPResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error testing user authorization");
                 return;
             }
             catch (ServletException e)
             {
-                log("ERROR: Unable to verify user authorization. ServletException : " + e.getMessage());
+                log.error("Unable to verify user authorization. ServletException : " + e.getMessage());
                 HTTPResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error testing user authorization: " + e.getMessage());
                 return;
             }
             if (isAuthorized)
             {
+                log.info("User is authorized to access the requested resource");
                 chain.doFilter(request, response);
             }
             else
             {
-                log("INFO: User is not authorized to access the requested resource");
+                log.info("User is not authorized to access the requested resource");
                 HTTPResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "You are not authorized to access the requested resource");
                 return;
             }
         }
         else
         {
-            log("DEBUG: Received a request via a non secure connection (HTTP). No checks to perform");
+            log.info("Received a request via a non secure connection (HTTP). No checks to perform");
             chain.doFilter(request, response);
         }
     }
 
 
+    /**
+     * @param contextPath
+     * @return
+     */
     private boolean checkServletContext(String contextPath)
     {
-        return(contextPath.startsWith("/gridhttps"));
+        return(contextPath.startsWith(Configuration.SERVLET_CONTEXT_PATH));
     }
 
 
     /**
+     * Builds the URI for the rest authorization request of a user providing a certificate without VOMS extension
+     * 
      * @param resourcePath
      * @param method
      * @param subjectDN
@@ -420,12 +370,12 @@ public class RequestFilter implements Filter
     {
         if (resourcePath == null || method == null || subjectDN == null || fqans == null)
         {
-            log("ERROR: Received null parameter(s) at isUserAuthorized: resourcePath=" + resourcePath + " method=" + method + " subjectDN="
+            log.error("Received null parameter(s) at isUserAuthorized: resourcePath=" + resourcePath + " method=" + method + " subjectDN="
                     + subjectDN + " fqans=" + fqans);
             throw new IllegalArgumentException("Received null parameter(s)");
         }
         URI uri = prepareURI(resourcePath, method, subjectDN, fqans);
-        log("INFO: uri = " + uri.toString());
+        log.debug("Authorization request uri = " + uri.toString());
         HttpGet httpget = new HttpGet(uri);
         HttpClient httpclient = new DefaultHttpClient();
         HttpResponse httpResponse;
@@ -435,19 +385,19 @@ public class RequestFilter implements Filter
         }
         catch (ClientProtocolException e)
         {
-            log("ERROR: Error executing http call. ClientProtocolException " + e.getLocalizedMessage());
+            log.error("Error executing http call. ClientProtocolException " + e.getLocalizedMessage());
             throw new ServletException("Error contacting authorization service.");
         }
         catch (IOException e)
         {
-            log("ERROR: Error executing http call. IOException " + e.getLocalizedMessage());
+            log.error("Error executing http call. IOException " + e.getLocalizedMessage());
             throw new ServletException("Error contacting authorization service.");
         }
         StatusLine status = httpResponse.getStatusLine();
         if (status == null)
         {
             // never return null
-            log("ERROR: Unexpected error! response.getStatusLine() returned null!");
+            log.error("Unexpected error! response.getStatusLine() returned null!");
             throw new ServletException("Unexpected error! response.getStatusLine() returned null! Please contact storm support");
         }
         int httpCode = status.getStatusCode();
@@ -463,12 +413,12 @@ public class RequestFilter implements Filter
             }
             catch (IllegalStateException e)
             {
-                log("ERROR: unable to get the input content stream from server answer. IllegalStateException " + e.getLocalizedMessage());
+                log.error("unable to get the input content stream from server answer. IllegalStateException " + e.getLocalizedMessage());
                 throw new ServletException("Error comunicationg with the authorization service.");
             }
             catch (IOException e)
             {
-                log("ERROR: unable to get the input content stream from server answer. IOException " + e.getLocalizedMessage());
+                log.error("unable to get the input content stream from server answer. IOException " + e.getLocalizedMessage());
                 throw new ServletException("Error comunicationg with the authorization service.");
             }
             int l;
@@ -482,29 +432,31 @@ public class RequestFilter implements Filter
             }
             catch (IOException e)
             {
-                log("ERROR: Error reading from the connection error stream. IOException " + e.getMessage());
+                log.error("Error reading from the connection error stream. IOException " + e.getMessage());
                 throw new ServletException("Error comunicationg with the authorization service.");
             }
         }
         else
         {
-            log("ERROR: no HttpEntity found in the response. Unable to determine the answer");
+            log.error("No HttpEntity found in the response. Unable to determine the answer");
             throw new ServletException("Unable to get a valid authorization response from the server.");
         }
-        log("INFO: Response is : \'" + output + "\'");
+        log.debug("Authorization response response is : \'" + output + "\'");
         if (httpCode != HttpURLConnection.HTTP_OK)
         {
-            log("WARN: Unable to get a valid response from server. Received a non HTTP 200 response from the server : \'" + httpCode
+            log.warn("Unable to get a valid response from server. Received a non HTTP 200 response from the server : \'" + httpCode
                     + "\' " + httpMessage);
             throw new ServletException("Unable to get a valid response from server. " + httpMessage);
         }
         Boolean response = new Boolean(output);
-        log("INFO: Boolean response: \'" + response + "\'");
+        log.debug("Authorization response (Boolean value): \'" + response + "\'");
         return response.booleanValue();
     }
 
 
     /**
+     * Builds the URI for the rest authorization request of a user providing a certificate with VOMS extension  
+     * 
      * @param resourcePath
      * @param method
      * @param subjectDN
@@ -518,11 +470,11 @@ public class RequestFilter implements Filter
     {
         if (resourcePath == null || method == null || subjectDN == null || fqans == null)
         {
-            log("ERROR: Received null parameter(s) at prepareURL: resourcePath=" + resourcePath + " method=" + method + " subjectDN="
+            log.error("Received null parameter(s) at prepareURL: resourcePath=" + resourcePath + " method=" + method + " subjectDN="
                     + subjectDN + " fqans=" + fqans);
             throw new IllegalArgumentException("Received null parameter(s)");
         }
-        log("DEBUG: encoding parameters");
+        log.debug("Encoding Authorization request parameters");
         String path;
         try
         {
@@ -530,7 +482,7 @@ public class RequestFilter implements Filter
         }
         catch (UnsupportedEncodingException e)
         {
-            log("ERROR: Exception encoding the path \'" + resourcePath + "\' UnsupportedEncodingException: " + e.getMessage());
+            log.error("Exception encoding the path \'" + resourcePath + "\' UnsupportedEncodingException: " + e.getMessage());
             throw new ServletException("Unable to encode resourcePath paramether, unsupported encoding \'" + UserAuthzServiceConstants.ENCODING_SCHEME
                     + "\'");
         }
@@ -553,28 +505,32 @@ public class RequestFilter implements Filter
         {
             qparams.add(new BasicNameValuePair(UserAuthzServiceConstants.FQANS_KEY, fqansList));
         }
+        ConfigurationParameters stormBackendParameters = Configuration.getInstance().getState();
         URI uri;
         try
         {
-            uri = new URI("http", null,Configuration.getStormBackendHostname(), Configuration.getStormBackendRestPort(), path, URLEncodedUtils.format(qparams, "UTF-8"), null);
+            uri = new URI("http", null,stormBackendParameters.getStormBackendHostname(), stormBackendParameters.getStormBackendRestPort(), path, URLEncodedUtils.format(qparams, "UTF-8"), null);
         }
         catch (URISyntaxException e)
         {
-            log("createURI URISyntaxException " + e.getLocalizedMessage());
-            throw new ServletException("createURI URISyntaxException " + e.getLocalizedMessage());
+            log.error("Unable to build Authorization Service RUI. URISyntaxException " + e.getLocalizedMessage());
+            throw new ServletException("Unable to build Authorization Service RUI");
         }
+        log.debug("Prepared URI : " + uri);
         return uri;
     }
 
 
     /**
-     * @param resourcePath
-     * @param method
-     * @param b
-     * @return
-     * @throws UnsupportedEncodingException
+     * Build the request path for the authorization server given the resource path, 
+     * the requested method and VOMS extensions flag
+     * 
+     * @param resourcePath the path of the resource on which authorization has to be checked
+     * @param method the method with which the user has to be accessed
+     * @param hasVOMSExtension a flag that indicates if VOMS extensions will be provided in the request
+     * @return the built path
      */
-    private String buildpath(String resourcePath, String method, boolean b) throws UnsupportedEncodingException
+    private String buildpath(String resourcePath, String method, boolean hasVOMSExtension)
     {
         String operation;
         if (method.equals(READ_METHOD))
@@ -585,8 +541,9 @@ public class RequestFilter implements Filter
         {
             operation = ENCODED_WRITE_OPERATION;
         }
-        String path = "/" + UserAuthzServiceConstants.RESOURCE + "/" + UserAuthzServiceConstants.VERSION + "/" + resourcePath + "/" + operation + "/";
-        if (b)
+        String path = "/" + UserAuthzServiceConstants.RESOURCE + "/" + UserAuthzServiceConstants.VERSION + "/" + resourcePath + "/"
+                + operation + "/";
+        if (hasVOMSExtension)
         {
             path += UserAuthzServiceConstants.VOMS_EXTENSIONS + "/";
         }
@@ -594,6 +551,7 @@ public class RequestFilter implements Filter
         {
             path += UserAuthzServiceConstants.PLAIN + "/";
         }
+        log.debug("Built path " + path + UserAuthzServiceConstants.USER);
         return path + UserAuthzServiceConstants.USER;
     }
 
@@ -610,6 +568,7 @@ public class RequestFilter implements Filter
         if (schema != null && (schema.equals(HTTP_SCHEMA) || schema.equals(HTTPS_SCHEMA)))
         {
             response = true;
+            log.debug("Schema " + schema + " is valid");
         }
         return response;
     }
@@ -629,6 +588,7 @@ public class RequestFilter implements Filter
             if (allowedMethod.equals(method))
             {
                 response = true;
+                log.debug("Method " + method + " is allowed");
                 break;
             }
         }
@@ -660,6 +620,7 @@ public class RequestFilter implements Filter
         if (requestedURI != null && requestedURI.startsWith(Configuration.SERVICE_PATH + File.separatorChar))
         {
             response = true;
+            log.debug("Requested uri is valid");
         }
         return response;
     }
@@ -675,7 +636,8 @@ public class RequestFilter implements Filter
     {
         if (requestedURI == null || requestedURI.length() < contextpath.length())
         {
-            throw new IllegalArgumentException("The provided argument string is too short");
+            log.error("Some of the provided parameters are invalid: requestedURI=" + requestedURI + " , contextpath= " + contextpath);
+            throw new IllegalArgumentException("The provided argument strings are not valid");
         }
         int offset = 1;
         if (contextpath.charAt(contextpath.length() - 1) != '/')
@@ -702,17 +664,19 @@ public class RequestFilter implements Filter
         certChain = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
         if (certChain == null)
         {
-            log("ERROR: No certificate found in request, even if it is under https!");
-            throw new ServletException("No certificate found in request!");
+            log.error("No certificate found in request, even if it is under https!");
+            throw new ServletException("No certificate found in https request!");
         }
         sc.setClientCertChain(certChain);
         X509Certificate certificate = sc.getClientCert();
         DN subjectDN = DNHandler.getSubject(certificate);
+        log.debug("Request certificate subject DN is : " + subjectDN.getX500());
         DN issuerDN = DNHandler.getIssuer(certificate);
         if (sc.getClientName() != null)
         {
             sc.setClientName(subjectDN.getX500());
         }
+        log.debug("Request certificate issuer DN is : " + issuerDN.getX500());
         if (sc.getIssuerName() != null)
         {
             sc.setIssuerName(issuerDN.getX500());
@@ -723,13 +687,13 @@ public class RequestFilter implements Filter
     /**
      * @return
      */
-    private String getDNX500FromSecurityContext()
+    private String getDNX500FromSecurityContext() throws ServletException
     {
         SecurityContext currentContext = SecurityContext.getCurrentContext();
         if (currentContext.getClientDN() == null)
         {
-            log("ERROR: current context return null client DN");
-            return null;
+            log.error("Current context contains a null client DN! Unable to extract x500 DN");
+            throw new ServletException("Current context contains a null client DN");
         }
         return currentContext.getClientDN().getX500();
     }
@@ -744,11 +708,11 @@ public class RequestFilter implements Filter
     private String[] getFQANsFromSecurityContext() throws ServletException
     {
         String[] fqans = null;
-        log("DEBUG: Fectching FQANs out of the security context");
+        log.debug("Fectching FQANs out of the security context");
         SecurityContext currentContext = SecurityContext.getCurrentContext();
         if (validator == null)
         {
-            log("DEBUG: Initializing VOMS validator object...");
+            log.debug("Initializing VOMS validator object...");
             validator = new VOMSValidator(currentContext.getClientCertChain());
         }
         else
@@ -761,19 +725,19 @@ public class RequestFilter implements Filter
         }
         catch (IllegalArgumentException e)
         {
-            log("ERROR: Error validating voms attributes out of the cert chain. IllegalArgumentException : " + e.getMessage());
+            log.error("Error validating voms attributes out of the cert chain. IllegalArgumentException : " + e.getMessage());
             throw new ServletException("Error validating voms attributes out of the cert chain");
         }
         catch (Throwable e)
         {
-            log("Error validating voms attributes out of the cert chain. Throwable : " + e.getMessage());
+            log.error("Error validating voms attributes out of the cert chain. Throwable : " + e.getMessage());
             throw new ServletException("Error validating voms attributes out of the cert chain");
         }
         List<VOMSAttribute> attrs = validator.getVOMSAttributes();
         if (attrs == null)
         {
-            log("ERROR: Retrieved null voms attributes from voms validator");
-            throw new ServletException("Retrieved null voms attributes from voms validator");
+            log.error("Retrieved null voms attributes from voms validator");
+            throw new ServletException("Unable to obtain fqans, retrieved null voms attributes from voms validator");
         }
         for (VOMSAttribute vomsAttr : attrs)
         {
@@ -784,12 +748,12 @@ public class RequestFilter implements Filter
             }
             catch (IllegalArgumentException e)
             {
-                log("Error validating voms attributes out of the cert chain. Throwable : " + e.getMessage());
+                log.error("Error validating voms attributes out of the cert chain. Throwable : " + e.getMessage());
                 throw new ServletException("Error validating voms attributes out of the cert chain");
             }
-            log("DEBUG: found " + fqanAttrs.size() + " FQANS");
             if (fqanAttrs != null && fqanAttrs.size() > 0)
             {
+                log.debug("Found " + fqanAttrs.size() + " FQANS");
                 fqans = new String[fqanAttrs.size()];
                 for (int i = 0; i < fqanAttrs.size(); i++)
                 {
@@ -798,7 +762,7 @@ public class RequestFilter implements Filter
             }
             else
             {
-                log("INFO: No VOMS AC found in client certificate chain");
+                log.info("No VOMS Attributes found in client certificate chain");
                 fqans = new String[0];
             }
         }

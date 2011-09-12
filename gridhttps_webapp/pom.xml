@@ -3,10 +3,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<artifactId>storm-gridhttps-server</artifactId>
-		<groupId>it.grid.storm</groupId>
-		<version>1.0.0</version>
+		<groupId>emi.storm</groupId>
+<!--		<version>1.0.1</version>-->
+<version>${emi-version}</version>
 	</parent>
-	<groupId>it.grid.storm</groupId>
 	<artifactId>gridhttps_webapp</artifactId>
 	<version>1.0.0</version>
 	<packaging>war</packaging>
@@ -17,7 +17,6 @@
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
-					<debug>true</debug>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -30,16 +29,60 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>it.grid.storm</groupId>
+			<groupId>${groupId}</groupId>
 			<artifactId>gridhttps_common</artifactId>
-			<version>1.0.0</version>
-			<type>jar</type>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<scope>provided</scope>
+		</dependency>
+<!--	Those are the SL5 version (also EMI defined version)-->
+<!--		<dependency>-->
+<!--			<groupId>commons-httpclient</groupId>-->
+<!--			<artifactId>commons-httpclient</artifactId>-->
+<!--			<version>3.0</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--		    <groupId>commons-logging</groupId>-->
+<!--		    <artifactId>commons-logging</artifactId>-->
+<!--		    <version>1.0.4</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--		    <groupId>commons-codec</groupId>-->
+<!--		    <artifactId>commons-codec</artifactId>-->
+<!--		    <version>1.3</version>-->
+<!--		</dependency>-->
+<!--	Those are the SL5 version (not EMI defined)-->
+<!--		<dependency>-->
+<!--    		<groupId>commons-collections</groupId>-->
+<!--    		<artifactId>commons-collections</artifactId>-->
+<!--    		<version>3.2</version>-->
+<!--		</dependency>-->
+
 		<dependency>
 			<groupId>velocity</groupId>
 			<artifactId>velocity</artifactId>
 			<version>1.5</version>
+			<type>jar</type>
+			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-lang</artifactId>
+					<groupId>commons-lang</groupId>
+				</exclusion>
+			</exclusions>
+	<!--
+		Be carefull with commons-collections! tomcat5 requires:
+		jakarta-commons-collections >= 0:3.1, velocity-1.5 requires 3.1 but on
+		SL5 repo there is 3.2!
+	-->
 		</dependency>
 		<dependency>
 			<groupId>velocity</groupId>
@@ -47,6 +90,16 @@
 			<version>1.5-beta2</version>
 			<type>jar</type>
 			<scope>compile</scope>
+		</dependency>
+		 <dependency>
+			<groupId>avalon-logkit</groupId>
+			<artifactId>avalon-logkit</artifactId>
+			<version>2.0.0</version>
+    	</dependency>
+ 		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

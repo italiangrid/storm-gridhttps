@@ -25,6 +25,14 @@ public class TemplateException extends Exception {
     public TemplateException(String message) {
         super(message);
     }
+    
+    /**
+     * @param message
+     * @param cause
+     */
+    public TemplateException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }
 

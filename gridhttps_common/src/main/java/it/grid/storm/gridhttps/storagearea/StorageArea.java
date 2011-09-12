@@ -12,12 +12,11 @@
  */
 package it.grid.storm.gridhttps.storagearea;
 
-import java.io.File;
 
+import java.io.File;
 
 /**
  * @author Michele Dibenedetto
- *
  */
 public class StorageArea
 {
@@ -28,6 +27,11 @@ public class StorageArea
     private String stfnRoot;
 
 
+    /**
+     * @param name the name of the storage area
+     * @param FSRoot the File System root of the storage area
+     * @param stfnRoot the storage file name root of the storage area
+     */
     public StorageArea(String name, String FSRoot, String stfnRoot)
     {
         this.name = name;
@@ -53,15 +57,18 @@ public class StorageArea
         return FSRoot;
     }
 
+
     /**
-     * @param path
-     * @return
+     * Given a path string builds from it a path string with starting slash and without ending slash
+     * 
+     * @param path a path string
+     * @return a path string with starting slash and without ending slash
      */
     private final String normalizePath(String path)
     {
-        if(path.charAt(path.length() - 1) == File.separatorChar)
+        if (path.charAt(path.length() - 1) == File.separatorChar)
         {
-            if(path.charAt(0) != File.separatorChar)
+            if (path.charAt(0) != File.separatorChar)
             {
                 return File.separatorChar + path.substring(0, path.length() - 1);
             }
@@ -72,16 +79,17 @@ public class StorageArea
         }
         else
         {
-            if(path.charAt(0) != File.separatorChar)
+            if (path.charAt(0) != File.separatorChar)
             {
-                return File.separatorChar + path;   
+                return File.separatorChar + path;
             }
             else
             {
                 return path;
             }
-        } 
+        }
     }
+
 
     /**
      * @return the stfnRoot
@@ -92,7 +100,8 @@ public class StorageArea
     }
 
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
      * @see java.lang.Object#toString()
      */
     @Override
