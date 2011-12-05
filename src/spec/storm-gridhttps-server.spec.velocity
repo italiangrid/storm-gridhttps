@@ -1,0 +1,266 @@
+Summary: The StoRM GridHTTPS component
+Name: ${PackageName}
+Version: ${PackageVersion}
+Release: ${PackageRelease}
+License: Apache License 2.0
+Vendor: EMI
+URL: http://storm.forge.cnaf.infn.it
+Group: Application/Internet
+Packager: Michele Dibenedetto storm-support@lists.infn.it
+
+BuildArch: noarch
+BuildRequires: maven
+BuildRequires: java-devel
+BuildRequires: bouncycastle
+BuildRequires: jakarta-commons-lang
+
+Requires: java-devel
+Requires: vomsjapi
+Requires: emi-trustmanager-tomcat
+Requires: emi-trustmanager
+Requires: bouncycastle
+Requires: jakarta-commons-lang
+Requires: ${TomcatPackageName}
+
+BuildRoot: %{_builddir}/%{name}-root
+AutoReqProv: yes
+Source: %{name}-%{version}.tar.gz
+
+%description
+The StoRM GridHTTPS component providing http(s) access to StoRM managed files
+
+%prep
+
+
+%setup -c
+
+%build
+mkdir -p ${MavenRepositoryDir}; cp -rvf storm-m2-repository/* ${MavenRepositoryDir}
+mvn -Dmaven.repo.local=${MavenRepositoryDir} -Drelease=%{release} -Darch=${PackageArch} -Demi-version=%{version} -Demi-trustmanager.version=${EmiTrustmanagerVersion} -Demi-trustmanager-tomcat.version=${EmiTrustmanagerTomcatVersion} -Dvomsjapi.version=${VomsjapiVersion} -P ${MavenProfile} install
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT
+test -d gridhttps_assembler/target/%{name}-fakeroot.dir && cp -vR gridhttps_assembler/target/%{name}-fakeroot.dir/* $RPM_BUILD_ROOT
+
+%clean
+#rm -rf $RPM_BUILD_ROOT
+
+%post
+#during an install, the value of the argument passed in is 1
+#during an upgrade, the value of the argument passed in is 2
+if [ "$1" = "1" ] ; then
+
+#Create links only to the jars provided with this rpm, yaim module will create the others (trustmanager ecc)
+	echo "Creating links to the provided jars in tomcat lib folders"
+	ln -sf ${JarDir}/%{name}/gridhttps_common.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	ln -sf ${JarDir}/%{name}/gridhttps_filter.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	
+	ln -sf ${JarDir}/%{name}/httpclient.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	ln -sf ${JarDir}/%{name}/httpcore.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	ln -sf ${JarDir}/%{name}/commons-codec.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/*commons-modeler*.jar ] ; then
+		echo "backupping the existing link to commons-modeler.jar in server/lib"
+		VAR=`ls /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/*commons-modeler*.jar`
+		mv /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/*commons-modeler*.jar  $VAR.storm.saved;
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/*commons-modeler*.jar ] ; then
+		echo "backupping the existing link to commons-modeler.jar in common/lib"
+		VAR=`ls /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/*commons-modeler*.jar`
+		mv /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/*commons-modeler*.jar  $VAR.storm.saved;
+	fi
+	ln -sf ${JarDir}/%{name}/commons-modeler.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-modeler.jar
+	
+	ln -sf ${JarDir}/%{name}/gridhttps_webapp.war  /usr/share/${TomcatPackageName}/webapps/
+	
+	if [ ! -f /usr/share/${TomcatPackageName}/common/classes/log4j.properties -a ! -L /usr/share/${TomcatPackageName}/common/classes/log4j.properties ] ; then
+		ln -sf ${ConfDir}/${ModuleName}/log4j-tomcat.properties  /usr/share/${TomcatPackageName}/common/classes/log4j.properties
+	fi
+elif [ "$1" = "2" ] ; then
+	# Let tomcat reload the webapp
+	
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpclient-*.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpclient-*.jar ;
+	fi
+	ln -sf ${JarDir}/%{name}/httpclient.jar /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpcore-*.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpcore-*.jar ;
+	fi
+	ln -sf ${JarDir}/%{name}/httpcore.jar /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-codec-*.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-codec-*.jar ;
+	fi
+	ln -sf ${JarDir}/%{name}/commons-codec.jar /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-modeler*.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-modeler*.jar  ;
+	fi
+	ln -sf ${JarDir}/%{name}/commons-modeler.jar  /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-modeler.jar
+	if [ -L /usr/share/${TomcatPackageName}/webapps/gridhttps*.war ] ; then
+		unlink /usr/share/${TomcatPackageName}/webapps/gridhttps*.war  ;
+	fi
+	ln -sf ${JarDir}/%{name}/gridhttps_webapp.war  /usr/share/${TomcatPackageName}/webapps/
+fi
+
+%preun
+#during an upgrade, the value of the argument passed in is 1
+#during an uninstall, the value of the argument passed in is 0
+if [ "$1" = "0" ] ; then
+	echo 'Removing old links to StoRM GridHTTPS server jars from StoRM tomcat common/lib folder'
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/gridhttps_common.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/gridhttps_common.jar ;
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/gridhttps_filter.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/gridhttps_filter.jar ;
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpclient.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpclient.jar ;
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpcore.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/httpcore.jar ;
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-codec.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-codec.jar ;
+	fi
+	
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-modeler.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/commons-modeler.jar  ;
+	fi
+	
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/*commons-modeler*.jar.storm.saved ] ; then
+		VAR=`ls /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/*commons-modeler*.jar.storm.saved`
+		LENGTH=`expr length "$VAR"`
+		LENGTH=$(($LENGTH - 12))
+		NEW_NAME=`echo $VAR | head -c $LENGTH`
+		mv /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/*commons-modeler*.jar.storm.saved  $NEW_NAME;
+	fi
+	
+	if [ -L /usr/share/${TomcatCommonLibDir}/${TomcatCommonLibDir}/*commons-modeler*.jar.storm.saved ] ; then
+		VAR=`ls /usr/share/${TomcatCommonLibDir}/${TomcatCommonLibDir}/*commons-modeler*.jar.storm.saved`
+		LENGTH=`expr length "$VAR"`
+		LENGTH=$(($LENGTH - 12))
+		NEW_NAME=`echo $VAR | head -c $LENGTH`
+		mv /usr/share/${TomcatCommonLibDir}/${TomcatCommonLibDir}/*commons-modeler*.jar.storm.saved  $NEW_NAME;
+	fi
+	
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/trustmanager.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/trustmanager.jar
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/trustmanager-tomcat.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatServerLibDir}/trustmanager-tomcat.jar
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/vomsjapi.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/vomsjapi.jar
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/[bcprov].jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/[bcprov].jar
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/log4j.jar ] ; then
+		unlink /usr/share/${TomcatPackageName}/${TomcatCommonLibDir}/[log4j].jar
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/conf/log4j-trustmanager.properties ] ; then
+		unlink /usr/share/${TomcatPackageName}/conf/log4j-trustmanager.properties
+	fi
+	if [ -L /usr/share/${TomcatPackageName}/common/classes/log4j.properties ] ; then
+		DEST_FILE=`readlink /usr/share/${TomcatPackageName}/common/classes/log4j.properties`
+		if [ $? -eq 0 ] ; then
+			if [ $DEST_FILE="${ConfDir}/${ModuleName}/log4j-tomcat.properties" ] ; then
+				unlink /usr/share/${TomcatPackageName}/common/classes/log4j.properties
+			fi
+		else
+			echo "Error. Unable to read link at /usr/share/${TomcatPackageName}/common/classes/log4j.properties"
+		fi
+	fi
+	
+	
+	# Remove log files
+	rm -f /var/log/storm/%{name}*
+	rm -f /var/log/storm/velocity-gridhttps*
+	
+	# Remove tomcat context files
+	rm -f /usr/share/${TomcatPackageName}/conf/Catalina/localhost/storageArea* 
+	
+	# Clean yaim stuff
+	
+	# Delete the link to web.xml generated file 
+	if [ -f /etc/${TomcatPackageName}/${TomcatPackageName}.conf ] ; then
+		# tomcat is still installed. Put back its original configuration file
+		if [ -L /usr/share/${TomcatPackageName}/conf/web.xml -a -f /usr/share/${TomcatPackageName}/conf/web.xml.storm.saved ] ; then
+			unlink /usr/share/${TomcatPackageName}/conf/web.xml
+			mv /usr/share/${TomcatPackageName}/conf/web.xml.storm.saved /usr/share/${TomcatPackageName}/conf/web.xml
+		fi
+		if [ -f /usr/share/${TomcatPackageName}/conf/server.xml -a -f /usr/share/${TomcatPackageName}/conf/server.xml.storm.saved ] ; then
+			rm -f /usr/share/${TomcatPackageName}/conf/server.xml
+			mv /usr/share/${TomcatPackageName}/conf/server.xml.storm.saved /usr/share/${TomcatPackageName}/conf/server.xml
+		fi
+	else
+		# tomcat has been removed. Remove the created configuration files 
+		if [ -L /usr/share/${TomcatPackageName}/conf/web.xml ] ; then
+			unlink /usr/share/${TomcatPackageName}/conf/web.xml
+		fi
+		if [ -f /usr/share/${TomcatPackageName}/conf/web.xml.storm.saved ] ; then
+			rm -f /usr/share/${TomcatPackageName}/conf/web.xml.storm.saved
+		fi
+		if [ -f /usr/share/${TomcatPackageName}/conf/server.xml ] ; then
+			rm -f /usr/share/${TomcatPackageName}/conf/server.xml
+		fi
+		if [ -f /usr/share/${TomcatPackageName}/conf/server.xml.storm.saved ] ; then
+			rm -f /usr/share/${TomcatPackageName}/conf/server.xml.storm.saved 
+		fi
+	fi
+	
+	if [ -L /usr/share/${TomcatPackageName}/conf/log4j-trustmanager.properties ] ; then
+		unlink /usr/share/${TomcatPackageName}/conf/log4j-trustmanager.properties
+	fi
+	
+	# Delete the web.xml file produced by yaim (not owned by the rpm)
+	if [ -f ${ConfDir}/${ModuleName}/web.xml ] ; then
+		rm -f ${ConfDir}/${ModuleName}/web.xml
+	fi
+	
+	ls ${ConfDir}/${ModuleName}/web.xml.bkp_* &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo 'Removing configuration file backups produced by YAIM'
+		rm -f ${ConfDir}/${ModuleName}/web.xml.bkp_*
+	fi
+	
+	
+	#TODO delete tomcat generated certificates
+	
+	echo 'Removing old links to StoRM GridHTTPS server webapp war from StoRM tomcat webapps folder'
+	if [ -L /usr/share/${TomcatPackageName}/webapps/gridhttps.war ] ; then
+		unlink /usr/share/${TomcatPackageName}/webapps/gridhttps.war ;
+	fi
+	
+	# Delete eventually produced .rpmsave files
+	rm -f ${ConfDir}/${ModuleName}/*.rpmsave
+	
+elif [ "$1" = "1" ] ; then
+	#for now, do nothing
+	echo "Nothing to do"
+fi
+
+%files
+%defattr(-,root,root)
+%dir ${ConfDir}/
+%dir ${ConfDir}/${ModuleName}/
+%config ${ConfDir}/${ModuleName}/log4j-gridhttps-server.properties
+%config ${ConfDir}/${ModuleName}/log4j-tomcat.properties
+%config ${ConfDir}/${ModuleName}/web.xml.template
+%doc %dir ${DocDir}/%{name}-%{version}
+%doc ${DocDir}/%{name}-%{version}/LICENSE.txt
+%doc ${DocDir}/%{name}-%{version}/CHANGELOG
+%dir ${JarDir}/%{name}/
+${JarDir}/%{name}/gridhttps_common.jar
+${JarDir}/%{name}/gridhttps_filter.jar
+${JarDir}/%{name}/gridhttps_webapp.war
+${JarDir}/%{name}/commons-codec.jar
+${JarDir}/%{name}/commons-modeler.jar
+${JarDir}/%{name}/httpclient.jar
+${JarDir}/%{name}/httpcore.jar
+%dir ${LogDir}
+
+%changelog
+* Fri Feb 23 2011 <Michele Dibenedetto> <michele.dibenedetto@cnaf.infn.it> %{version}-%{release}
+-the storm-gridhtps-server is responsible provide http(s) access to files 
+-the service verifies https calls by unspecting the received certificate and eventualy its VOMS extensions
+-it interacts with storm-gridhttps-server using the Authorization Rest interfacethat it provides. Current version is compliant with storm-backend-server Authorization rest interface version 1.0.0

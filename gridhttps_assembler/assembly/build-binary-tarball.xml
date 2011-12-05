@@ -1,0 +1,51 @@
+<assembly xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/assembly-1.0.0.xsd">
+
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<formats>
+		<format>tar.gz</format>
+	</formats>
+	<id>bin</id>
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}/../etc</directory>
+			<outputDirectory>${conf_installation_prefix}/${module_name}</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../doc</directory>
+			<outputDirectory>${doc_installation_prefix}/${project.parent.artifactId}-${project.parent.version}</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/..</directory>
+			<outputDirectory>${doc_installation_prefix}/${project.parent.artifactId}-${project.parent.version}</outputDirectory>
+			<includes>
+				<include>LICENSE.txt</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/../log</directory>
+			<outputDirectory>${log_installation_directory}</outputDirectory>
+		</fileSet>
+	</fileSets>
+	<moduleSets>
+		<moduleSet>
+			<useAllReactorProjects>true</useAllReactorProjects>
+			<binaries>
+				<includeDependencies>true</includeDependencies>
+				<outputDirectory>${jar_installation_prefix}/${project.parent.artifactId}</outputDirectory>
+				<outputFileNameMapping>${artifact.artifactId}.${artifact.extension}</outputFileNameMapping>
+				<unpack>false</unpack>
+				<includes>
+					<include>org.apache.httpcomponents:httpclient:*</include>
+					<include>org.apache.httpcomponents:httpcore:*</include>
+					<include>commons-modeler:commons-modeler:*</include>
+					<include>commons-codec:commons-codec:*</include>
+					<include>commons-codec:commons-codec:*</include>
+					<include>${project.groupId}:gridhttps_common:*</include>
+					<include>${project.groupId}:gridhttps_filter:*</include>
+					<include>${project.groupId}:gridhttps_webapp:*</include>
+				</includes>
+			</binaries>
+		</moduleSet>
+	</moduleSets>
+</assembly>

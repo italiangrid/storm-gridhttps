@@ -90,9 +90,8 @@ public abstract class StateObserver implements Observer
     }
     
     /* (non-Javadoc)
-     * @see it.grid.storm.gridhttps.SympleObserver#notifyEvent()
+     * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
      */
-    @Override
     public void update(Observable observable, Object arg)
     {
         log.debug("Receved event notification");

@@ -76,7 +76,7 @@ public class StorageAreaManager
      * @return the best match StorageArea, null if none matches
      * @throws IllegalArgumentException if localFilePath is null
      */
-    public static StorageArea getMatchingSA(String localFilePath) throws IllegalArgumentException
+    public static StorageArea getMatchingSA(String localFilePath) throws IllegalArgumentException, IllegalStateException
     {
         if (localFilePath == null)
         {

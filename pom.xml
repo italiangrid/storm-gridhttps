@@ -3,7 +3,6 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>emi.storm</groupId>
 	<artifactId>storm-gridhttps-server</artifactId>
-	<!--		<version>1.0.1</version>-->
 	<version>${emi-version}</version>
 	<packaging>pom</packaging>
 	<developers>
@@ -13,6 +12,8 @@
 			<roles>
 				<role>Software Engineer</role>
 			</roles>
+			<organizationUrl>http://www.cnaf.infn.it/</organizationUrl>
+			<email>michele.dibenedetto@cnaf.infn.it</email>
 		</developer>
 	</developers>
 	<properties>
@@ -26,27 +27,122 @@
 		<module>gridhttps_common</module>
 		<module>gridhttps_filter</module>
 		<module>gridhttps_webapp</module>
-		<module>gridhttps_rpm_packager</module>
-		<module>gridhttps_source_rpm_packager</module>
+		<module>gridhttps_assembler</module>
 	</modules>
+    <repositories>
+        <repository>
+            <id>switch</id>
+            <name>SWITCH Releases</name>
+            <url>http://www.switch.ch/grid/authz/docs/maven2/release</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+  	</repositories>
+	<build>
+		<plugins>
+			<plugin>
+				<inherited>false</inherited>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.2.1</version>
+				<extensions>true</extensions>
+				<executions>
+					<execution>
+						<id>make-assembly-source</id>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<finalName>${project.artifactId}-${project.version}</finalName>
+							<descriptors>
+								<descriptor>assembly/build-source-tarball.xml</descriptor>
+							</descriptors>
+							<tarLongFileMode>gnu</tarLongFileMode>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<inherited>false</inherited>
+				<groupId>net.rumati.maven.plugins</groupId>
+				<artifactId>velocity-maven-plugin</artifactId>
+				<version>0.1.2</version>
+				<executions>
+					<execution>
+						<id>bin-spec</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>velocity</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.build.directory}/spec/storm-gridhttps-server.spec</outputFile>
+							<template>src/spec/storm-gridhttps-server.spec.velocity</template>
+							<properties>
+								<PackageName>${project.artifactId}</PackageName>
+								<PackageVersion>${project.version}</PackageVersion>
+								<PackageRelease>${release}</PackageRelease>
+								<PackageArch>${arch}</PackageArch>
+								<TomcatPackageName>${TomcatPackageName}</TomcatPackageName>
+								<TomcatCommonLibDir>${EffectiveTomcatCommonLibDir}</TomcatCommonLibDir>
+								<TomcatServerLibDir>${EffectiveTomcatServerLibDir}</TomcatServerLibDir>
+								<EmiTrustmanagerVersion>${emi-trustmanager.version}</EmiTrustmanagerVersion> 
+								<EmiTrustmanagerTomcatVersion>${emi-trustmanager-tomcat.version}</EmiTrustmanagerTomcatVersion> 
+								<VomsjapiVersion>${vomsjapi.version}</VomsjapiVersion> 
+								<JarDir>${jar_installation_prefix}</JarDir>
+								<DocDir>${doc_installation_prefix}</DocDir>
+								<ConfDir>${conf_installation_prefix}</ConfDir>
+								<ModuleName>${module_name}</ModuleName>
+								<LogDir>${log_installation_directory}</LogDir>
+								<MavenRepositoryDir>${settings.localRepository}</MavenRepositoryDir>
+								<MavenProfile>${project.activeProfiles[0].id}</MavenProfile>
+							</properties>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<profiles>
+		<profile>
+			<id>sl5</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<TomcatPackageName>tomcat5</TomcatPackageName>
+				<EffectiveTomcatCommonLibDir>common/lib</EffectiveTomcatCommonLibDir>
+				<EffectiveTomcatServerLibDir>server/lib</EffectiveTomcatServerLibDir>
+			</properties>
+		</profile>
+		<profile>
+			<id>sl6</id>
+			<properties>
+				<TomcatPackageName>tomcat6</TomcatPackageName>
+				<EffectiveTomcatCommonLibDir>lib</EffectiveTomcatCommonLibDir>
+				<EffectiveTomcatServerLibDir>lib</EffectiveTomcatServerLibDir>
+			</properties>
+		</profile>
+	</profiles>
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>${groupId}</groupId>
+				<groupId>${project.groupId}</groupId>
 				<artifactId>gridhttps_common</artifactId>
 				<version>1.0.0</version>
 				<type>jar</type>
 				<scope>compile</scope>
 			</dependency>
 			<dependency>
-				<groupId>${groupId}</groupId>
+				<groupId>${project.groupId}</groupId>
 				<artifactId>gridhttps_filter</artifactId>
 				<version>1.0.0</version>
 				<type>jar</type>
 				<scope>compile</scope>
 			</dependency>
 			<dependency>
-				<groupId>${groupId}</groupId>
+				<groupId>${project.groupId}</groupId>
 				<artifactId>gridhttps_webapp</artifactId>
 				<version>1.0.0</version>
 				<type>war</type>
@@ -72,30 +168,23 @@
 				</exclusions>
 			</dependency>
 			<dependency>
-				<groupId>emi.java-security</groupId>
-				<artifactId>emi-trustmanager</artifactId>
-				<version>3</version>
+			    <groupId>emi</groupId>
+				<artifactId>trustmanager</artifactId>
+				<version>${emi-trustmanager.version}</version>
 				<type>jar</type>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
-				<groupId>emi.java-security</groupId>
-				<artifactId>emi-trustmanager-tomcat</artifactId>
-				<version>3</version>
+			  	<groupId>emi</groupId>
+			  	<artifactId>trustmanager-tomcat</artifactId>
+				<version>${emi-trustmanager-tomcat.version}</version>
 				<type>jar</type>
 				<scope>provided</scope>
 			</dependency>
 			<dependency>
-				<groupId>emi.voms</groupId>
-				<artifactId>vomsjapi</artifactId>
-				<version>2</version>
-				<type>jar</type>
-				<scope>provided</scope>
-			</dependency>
-			<dependency>
-				<groupId>emi.externals</groupId>
-				<artifactId> bouncycastle</artifactId>
-				<version>1.45-6.el5</version>
+				<groupId>org.glite.voms</groupId>
+				<artifactId>voms-api-java</artifactId>
+				<version>${vomsjapi.version}</version>
 				<type>jar</type>
 				<scope>provided</scope>
 			</dependency>
@@ -118,7 +207,17 @@
 				<artifactId>commons-modeler</artifactId>
 				<version>2.0.1</version>
 				<type>jar</type>
-				<scope>compile</scope>
+			</dependency>
+				<dependency>
+				<groupId>velocity</groupId>
+				<artifactId>velocity</artifactId>
+				<version>1.5</version>
+				<type>jar</type>
+		<!--
+			Be carefull with commons-collections! tomcat5 requires:
+			jakarta-commons-collections >= 0:3.1, velocity-1.5 requires 3.1 but on
+			SL5 repo there is 3.2!
+		-->
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

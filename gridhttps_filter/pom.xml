@@ -4,8 +4,7 @@
 	<parent>
 		<artifactId>storm-gridhttps-server</artifactId>
 		<groupId>emi.storm</groupId>
-<!--		<version>1.0.1</version>-->
-<version>${emi-version}</version>
+		<version>${emi-version}</version>
 	</parent>
 	<artifactId>gridhttps_filter</artifactId>
 	<version>1.0.0</version>
@@ -24,7 +23,7 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>${groupId}</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>gridhttps_common</artifactId>
 			<scope>provided</scope>
 		</dependency>
@@ -45,23 +44,18 @@
 <!--		</dependency>-->
 
 		<dependency>
-			<groupId>emi.java-security</groupId>
-			<artifactId>emi-trustmanager</artifactId>
+		    <groupId>emi</groupId>
+			<artifactId>trustmanager</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>emi.java-security</groupId>
-			<artifactId>emi-trustmanager-tomcat</artifactId>
+		  	<groupId>emi</groupId>
+		  	<artifactId>trustmanager-tomcat</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>emi.voms</groupId>
-			<artifactId>vomsjapi</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>emi.externals</groupId>
-			<artifactId> bouncycastle</artifactId>
+			<groupId>org.glite.voms</groupId>
+			<artifactId>voms-api-java</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>

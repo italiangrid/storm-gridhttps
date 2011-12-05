@@ -65,17 +65,20 @@ public abstract class WaitingStateObserver extends StateObserver
     {
         synchronized(lock)
         {
-            try
+            if(!observableReady())
             {
-                log.info("Configuration not yet initialized, registered as observer");
-                lock.wait();
-                log.info("Configuration initialized");
+                try
+                {
+                    log.info("Configuration not yet initialized, registered as observer");
+                    lock.wait();
+                }
+                catch (InterruptedException e)
+                {
+                    log.error("Waiting on the initialization lock interrupted abnormally. InterruptedException: " + e.getMessage());
+                    return;
+                }
             }
-            catch (InterruptedException e)
-            {
-                log.error("Waiting on the initialization lock interrupted abnormally. InterruptedException: " + e.getMessage());
-                return;
-            }
+            log.info("Configuration initialized");
         }
     }
 

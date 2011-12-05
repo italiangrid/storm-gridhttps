@@ -4,7 +4,6 @@
 	<parent>
 		<artifactId>storm-gridhttps-server</artifactId>
 		<groupId>emi.storm</groupId>
-<!--		<version>1.0.1</version>ù-->
 		<version>${emi-version}</version>
 	</parent>
 	<artifactId>gridhttps_common</artifactId>
@@ -31,6 +30,7 @@
 		<dependency>
 			<groupId>commons-modeler</groupId>
 			<artifactId>commons-modeler</artifactId>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 </project>

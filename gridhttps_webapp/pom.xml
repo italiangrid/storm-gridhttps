@@ -4,8 +4,7 @@
 	<parent>
 		<artifactId>storm-gridhttps-server</artifactId>
 		<groupId>emi.storm</groupId>
-<!--		<version>1.0.1</version>-->
-<version>${emi-version}</version>
+		<version>${emi-version}</version>
 	</parent>
 	<artifactId>gridhttps_webapp</artifactId>
 	<version>1.0.0</version>
@@ -29,7 +28,7 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>${groupId}</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>gridhttps_common</artifactId>
 			<scope>provided</scope>
 		</dependency>
@@ -65,12 +64,9 @@
 <!--    		<artifactId>commons-collections</artifactId>-->
 <!--    		<version>3.2</version>-->
 <!--		</dependency>-->
-
 		<dependency>
 			<groupId>velocity</groupId>
 			<artifactId>velocity</artifactId>
-			<version>1.5</version>
-			<type>jar</type>
 			<scope>compile</scope>
 			<exclusions>
 				<exclusion>
@@ -78,11 +74,6 @@
 					<groupId>commons-lang</groupId>
 				</exclusion>
 			</exclusions>
-	<!--
-		Be carefull with commons-collections! tomcat5 requires:
-		jakarta-commons-collections >= 0:3.1, velocity-1.5 requires 3.1 but on
-		SL5 repo there is 3.2!
-	-->
 		</dependency>
 		<dependency>
 			<groupId>velocity</groupId>
