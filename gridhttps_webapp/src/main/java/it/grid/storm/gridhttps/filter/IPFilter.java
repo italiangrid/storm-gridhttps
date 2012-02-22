@@ -56,7 +56,7 @@ public class IPFilter extends WaitingStateObserver implements Filter
     @Override
     public void destroy()
     {
-        log.info("Servlet filter destroied");
+        log.info("Servlet filter destroyed");
     }
 
     /* (non-Javadoc)
