@@ -114,6 +114,8 @@
 				<TomcatPackageName>tomcat5</TomcatPackageName>
 				<EffectiveTomcatCommonLibDir>common/lib</EffectiveTomcatCommonLibDir>
 				<EffectiveTomcatServerLibDir>server/lib</EffectiveTomcatServerLibDir>
+				<TomcatLoggingCustomized>true</TomcatLoggingCustomized>
+				<TomcatConfLoggingDir>common/classes</TomcatConfLoggingDir>
 			</properties>
 		</profile>
 		<profile>
@@ -122,6 +124,8 @@
 				<TomcatPackageName>tomcat6</TomcatPackageName>
 				<EffectiveTomcatCommonLibDir>lib</EffectiveTomcatCommonLibDir>
 				<EffectiveTomcatServerLibDir>lib</EffectiveTomcatServerLibDir>
+				<TomcatLoggingCustomized>false</TomcatLoggingCustomized>
+				<TomcatConfLoggingDir>lib</TomcatConfLoggingDir>
 			</properties>
 		</profile>
 	</profiles>

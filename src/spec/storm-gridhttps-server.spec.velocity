@@ -11,6 +11,7 @@ Packager: Michele Dibenedetto storm-support@lists.infn.it
 BuildArch: noarch
 BuildRequires: maven
 BuildRequires: java-devel
+#probably I must remove this dependency since is already addressed by my voms dependency
 BuildRequires: bouncycastle
 BuildRequires: jakarta-commons-lang
 
@@ -18,6 +19,7 @@ Requires: java-devel
 Requires: vomsjapi
 Requires: emi-trustmanager-tomcat
 Requires: emi-trustmanager
+#probably I must remove this dependency since is already addressed by my voms dependency
 Requires: bouncycastle
 Requires: jakarta-commons-lang
 Requires: ${TomcatPackageName}
@@ -73,8 +75,10 @@ if [ "$1" = "1" ] ; then
 	
 	ln -sf ${JarDir}/%{name}/gridhttps_webapp.war  /usr/share/${TomcatPackageName}/webapps/
 	
-	if [ ! -f /usr/share/${TomcatPackageName}/common/classes/log4j.properties -a ! -L /usr/share/${TomcatPackageName}/common/classes/log4j.properties ] ; then
-		ln -sf ${ConfDir}/${ModuleName}/log4j-tomcat.properties  /usr/share/${TomcatPackageName}/common/classes/log4j.properties
+	if [ "${TomcatLoggingCustomized}" == "true" ]; then
+		if [ ! -f /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties -a ! -L /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties ] ; then
+			ln -sf ${ConfDir}/${ModuleName}/log4j-tomcat.properties  /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties
+		fi
 	fi
 elif [ "$1" = "2" ] ; then
 	# Let tomcat reload the webapp
@@ -160,14 +164,14 @@ if [ "$1" = "0" ] ; then
 	if [ -L /usr/share/${TomcatPackageName}/conf/log4j-trustmanager.properties ] ; then
 		unlink /usr/share/${TomcatPackageName}/conf/log4j-trustmanager.properties
 	fi
-	if [ -L /usr/share/${TomcatPackageName}/common/classes/log4j.properties ] ; then
-		DEST_FILE=`readlink /usr/share/${TomcatPackageName}/common/classes/log4j.properties`
+	if [ -L /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties ] ; then
+		DEST_FILE=`readlink /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties`
 		if [ $? -eq 0 ] ; then
 			if [ $DEST_FILE="${ConfDir}/${ModuleName}/log4j-tomcat.properties" ] ; then
-				unlink /usr/share/${TomcatPackageName}/common/classes/log4j.properties
+				unlink /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties
 			fi
 		else
-			echo "Error. Unable to read link at /usr/share/${TomcatPackageName}/common/classes/log4j.properties"
+			echo "Error. Unable to read link at /usr/share/${TomcatPackageName}/${TomcatConfLoggingDir}/log4j.properties"
 		fi
 	fi
 	
