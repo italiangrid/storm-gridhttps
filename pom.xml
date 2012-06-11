@@ -97,7 +97,6 @@
 								<LogDir>${log_installation_directory}</LogDir>
 								<MavenRepositoryDir>${settings.localRepository}</MavenRepositoryDir>
 								<MavenProfile>${project.activeProfiles[0].id}</MavenProfile>
-								<JavaHome>${java.home}</JavaHome>
 							</properties>
 						</configuration>
 					</execution>

@@ -37,7 +37,7 @@ The StoRM GridHTTPS component providing http(s) access to StoRM managed files
 %setup -c
 
 %build
-mkdir -p ${MavenRepositoryDir}; cp -rvf storm-m2-repository/* ${MavenRepositoryDir}; export JAVA_HOME=${JavaHome}
+mkdir -p ${MavenRepositoryDir}; cp -rvf storm-m2-repository/* ${MavenRepositoryDir}
 mvn -Dmaven.repo.local=${MavenRepositoryDir} -Drelease=%{release} -Darch=${PackageArch} -Demi-version=%{version} -Demi-trustmanager.version=${EmiTrustmanagerVersion} -Demi-trustmanager-tomcat.version=${EmiTrustmanagerTomcatVersion} -Dvomsjapi.version=${VomsjapiVersion} -P ${MavenProfile} install
 
 %install
