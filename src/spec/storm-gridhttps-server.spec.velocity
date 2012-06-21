@@ -249,7 +249,7 @@ fi
 %dir ${ConfDir}/${ModuleName}/
 %config ${ConfDir}/${ModuleName}/log4j-gridhttps-server.properties
 %config ${ConfDir}/${ModuleName}/log4j-tomcat.properties
-%attr(640,%{root},%{root}) %config ${ConfDir}/${ModuleName}/web.xml.template
+%attr(640,root,root) %config ${ConfDir}/${ModuleName}/web.xml.template
 %doc %dir ${DocDir}/%{name}-%{version}
 %doc ${DocDir}/%{name}-%{version}/LICENSE.txt
 %doc ${DocDir}/%{name}-%{version}/CHANGELOG
