@@ -47,6 +47,7 @@ import org.apache.log4j.Logger;
 import org.glite.security.SecurityContext;
 import org.glite.security.util.DN;
 import org.glite.security.util.DNHandler;
+import org.glite.voms.FQAN;
 import org.glite.voms.VOMSAttribute;
 import org.glite.voms.VOMSValidator;
 
@@ -286,7 +287,7 @@ public class RequestFilter implements Filter
             }
             
             log.debug("User DN is : " + subjectDNX500);
-            String[] fquans = null;
+            FQAN[] fquans = null;
             try
             {
                 fquans = getFQANsFromSecurityContext();
@@ -300,7 +301,7 @@ public class RequestFilter implements Filter
             }
             if (fquans == null || fquans.length == 0)
             {
-                fquans = new String[0];
+                fquans = new FQAN[0];
                 log.debug("No fquans found in request context");
             }
             else
@@ -365,7 +366,7 @@ public class RequestFilter implements Filter
      * @throws ServletException
      * @throws IllegalArgumentException
      */
-    private boolean isUserAuthorized(String resourcePath, String method, String subjectDN, String[] fqans) throws ServletException,
+    private boolean isUserAuthorized(String resourcePath, String method, String subjectDN, FQAN[] fqans) throws ServletException,
                                                                                                            IllegalArgumentException
     {
         if (resourcePath == null || method == null || subjectDN == null || fqans == null)
@@ -465,7 +466,7 @@ public class RequestFilter implements Filter
      * @throws ServletException
      * @throws IllegalArgumentException
      */
-    private URI prepareURI(String resourcePath, String method, String subjectDN, String[] fqans) throws ServletException,
+    private URI prepareURI(String resourcePath, String method, String subjectDN, FQAN[] fqans) throws ServletException,
                                                                                                  IllegalArgumentException
     {
         if (resourcePath == null || method == null || subjectDN == null || fqans == null)
@@ -496,7 +497,7 @@ public class RequestFilter implements Filter
                 {
                     fqansList += UserAuthzServiceConstants.FQANS_SEPARATOR;
                 }
-                fqansList += fqans[i];
+                fqansList += fqans[i].toString();
             }
         }
         List<NameValuePair> qparams = new ArrayList<NameValuePair>();
@@ -705,9 +706,9 @@ public class RequestFilter implements Filter
      * @return
      * @throws ServletException
      */
-    private String[] getFQANsFromSecurityContext() throws ServletException
+    private FQAN[] getFQANsFromSecurityContext() throws ServletException
     {
-        String[] fqans = null;
+        FQAN[] fqans = null;
         log.debug("Fectching FQANs out of the security context");
         SecurityContext currentContext = SecurityContext.getCurrentContext();
         if (validator == null)
@@ -741,10 +742,10 @@ public class RequestFilter implements Filter
         }
         for (VOMSAttribute vomsAttr : attrs)
         {
-            List<String> fqanAttrs = null;
+            List<FQAN> fqanAttrs = null;
             try
             {
-                fqanAttrs = vomsAttr.getFullyQualifiedAttributes();
+                fqanAttrs = vomsAttr.getListOfFQAN();
             }
             catch (IllegalArgumentException e)
             {
@@ -754,16 +755,23 @@ public class RequestFilter implements Filter
             if (fqanAttrs != null && fqanAttrs.size() > 0)
             {
                 log.debug("Found " + fqanAttrs.size() + " FQANS");
-                fqans = new String[fqanAttrs.size()];
+                fqans = new FQAN[fqanAttrs.size()];
                 for (int i = 0; i < fqanAttrs.size(); i++)
                 {
-                    fqans[i] = getFQAN(fqanAttrs.get(i));
+                    try
+                    {
+                        fqans[i] = buildMapfileCompliantFQAN(fqanAttrs.get(i));
+                    }catch(IllegalArgumentException e)
+                    {
+                        log.warn("Unable to build a Mapfile Compliant FQAN from " + fqanAttrs.get(i)
+                                + " .IllegalArgumentException : " + e.getMessage());
+                    }
                 }
             }
             else
             {
                 log.info("No VOMS Attributes found in client certificate chain");
-                fqans = new String[0];
+                fqans = new FQAN[0];
             }
         }
         return fqans;
@@ -776,10 +784,16 @@ public class RequestFilter implements Filter
      * @param fqan
      * @return
      */
-    private static String getFQAN(String fqan)
+    private static FQAN buildMapfileCompliantFQAN(FQAN fqan) throws IllegalArgumentException
     {
-        fqan = fqan.replaceAll("\\/Role=NULL", "");
-        fqan = fqan.replaceAll("\\/Capability=NULL", "");
+        if(fqan == null)
+        {
+            throw new IllegalArgumentException("Unable to build Mapfile Compliant FQAN, illegal argument: fqan=" + fqan);
+        }
+        if(fqan.getRole() != null && fqan.getCapability() == null)
+        {
+            return new FQAN(fqan.getGroup(),fqan.getRole(), "NULL");
+        }
         return fqan;
     }
 }
